@@ -14,8 +14,8 @@ TowerOfBabel will be built as a single Next.js 14+ application using the App Rou
 
 **Key Services:**
 - **Frontend:** React components rendered server-side (SSR) and client-side for interactive features
-- **API Routes:** Next.js API handlers for authentication, LLM orchestration, usage tracking, Stripe webhooks
-- **External Integrations:** LLM provider APIs, Stripe payment API, email service (magic links)
+- **API Routes:** Next.js API handlers for authentication, LLM orchestration, usage tracking, Lemon Squeezy webhooks
+- **External Integrations:** LLM provider APIs, Lemon Squeezy payment API, email service (magic links)
 
 **Rationale:**
 - Monolith is appropriate for MVP scope (2-3 week timeline, single developer)
@@ -29,13 +29,13 @@ TowerOfBabel will be built as a single Next.js 14+ application using the App Rou
 
 **Testing Strategy:**
 - **Unit Tests:** Critical business logic (usage tracking, pricing calculations, metadata storage)
-- **Integration Tests:** API routes (authentication flow, interpretation endpoint, Stripe webhooks)
+- **Integration Tests:** API routes (authentication flow, interpretation endpoint, Lemon Squeezy webhooks)
 - **Manual Testing:** UI/UX workflows, cross-browser compatibility, LLM output quality
 - **No E2E automation for MVP:** Defer to Phase 2 (Playwright/Cypress adds complexity, slows 2-3 week timeline)
 
 **Testing Convenience Features:**
 - Test mode flags for bypassing LLM calls (use mock responses)
-- Stripe test mode for payment flow validation
+- Lemon Squeezy test mode for payment flow validation
 - Seeded test accounts with various tier/usage states
 - Local development endpoints for quick manual testing
 
@@ -84,7 +84,7 @@ TowerOfBabel will be built as a single Next.js 14+ application using the App Rou
 ```
 User {
   id, email, name, created_at, tier (trial|payg|pro),
-  messages_used_count, messages_reset_date, stripe_customer_id
+  messages_used_count, messages_reset_date, lemonsqueezy_customer_id
 }
 
 Interpretation {
@@ -94,12 +94,12 @@ Interpretation {
 }
 
 Subscription {
-  id, user_id, stripe_subscription_id, status, current_period_end
+  id, user_id, lemonsqueezy_subscription_id, status, current_period_end
 }
 ```
 
 **Payments:**
-- **Provider:** Stripe
+- **Provider:** Lemon Squeezy
 - **Implementation:**
   - Pro tier: Standard subscription ($10/month recurring)
   - Pay-as-you-go: Metered billing ($0.50 per interpretation)
@@ -121,7 +121,7 @@ Subscription {
 - **Provider Transparency:** Privacy page displays current LLM provider and links to their data retention policy
 - **HTTPS:** Enforced by Vercel (automatic SSL certificates)
 - **Rate Limiting:** Implemented via API middleware (Vercel Edge Middleware or Upstash Redis)
-- **API Key Security:** Environment variables for all secrets (LLM API keys, Stripe keys, database URLs)
+- **API Key Security:** Environment variables for all secrets (LLM API keys, Lemon Squeezy keys, database URLs)
 - **GDPR Compliance:** Cookie consent banner, privacy policy, user data deletion endpoint
 
 **Development Workflow:**

@@ -173,8 +173,8 @@ paths:
 
   /checkout:
     post:
-      summary: Create Stripe Checkout session
-      description: Create Stripe Checkout session for Pro subscription or PAYG
+      summary: Create Lemon Squeezy Checkout session
+      description: Create Lemon Squeezy Checkout session for Pro subscription or PAYG
       tags:
         - Payments
       security:
@@ -205,8 +205,8 @@ paths:
 
   /billing-portal:
     post:
-      summary: Create Stripe Customer Portal session
-      description: Generate Stripe Customer Portal link for subscription management
+      summary: Create Lemon Squeezy Customer Portal session
+      description: Generate Lemon Squeezy Customer Portal link for subscription management
       tags:
         - Payments
       security:
@@ -215,14 +215,14 @@ paths:
         '200':
           description: Portal session created
 
-  /webhooks/stripe:
+  /webhooks/lemonsqueezy:
     post:
-      summary: Stripe webhook endpoint
+      summary: Lemon Squeezy webhook endpoint
       description: |
-        Handles Stripe webhook events for subscription lifecycle management.
+        Handles Lemon Squeezy webhook events for subscription lifecycle management.
 
         **Security:** Verifies webhook signature before processing.
-        **Idempotency:** Checks StripeEvent table to prevent duplicate processing.
+        **Idempotency:** Checks LemonSqueezyEvent table to prevent duplicate processing.
 
         **Events Handled:**
         - `checkout.session.completed`: Create subscription, upgrade user to Pro

@@ -43,7 +43,7 @@
    - User record
    - All interpretation metadata records for user
    - Subscription records
-   - Does NOT delete Stripe customer records (handled separately via Stripe dashboard if needed)
+   - Does NOT delete Lemon Squeezy customer records (handled separately via Lemon Squeezy dashboard if needed)
 4. Successful deletion signs user out and redirects to goodbye page
 5. Cookie consent banner displayed on first visit to landing page
 6. Banner allows "Accept All" or "Reject Non-Essential" options
@@ -98,7 +98,7 @@
    - Sign-in (magic link & Google OAuth)
    - Inbound interpretation
    - Outbound optimization
-   - Payment flow (Stripe Checkout)
+   - Payment flow (Lemon Squeezy Checkout)
 3. Visual regressions checked (layout, spacing, colors consistent)
 4. PWA manifest file created (/public/manifest.json) with:
    - App name, description, icons
@@ -133,7 +133,7 @@
 10. Launch checklist completed:
     - Environment variables configured in production
     - Database migrations applied to production database
-    - Stripe webhooks configured with production endpoints
+    - Lemon Squeezy webhooks configured with production endpoints
     - Error monitoring active (Sentry or Vercel)
     - Analytics configured (Vercel Analytics or Plausible)
     - Domain DNS configured (if custom domain used)

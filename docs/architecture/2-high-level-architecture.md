@@ -4,13 +4,13 @@
 
 TowerOfBabel is a **monolithic serverless fullstack application** built on Next.js 14+ App Router, deployed on Vercel's edge network with Supabase PostgreSQL database (via PgBouncer connection pooling) and external LLM/payment integrations abstracted via service layer adapters.
 
-**Architecture Style:** Jamstack-inspired monolith with serverless API routes and layered security (rate limiting, webhook verification, input validation). Frontend uses server-side rendering (SSR) for initial page loads with client-side hydration for interactivity. Backend API routes handle authentication (database sessions), LLM orchestration (provider-agnostic adapter pattern), usage tracking (optimistic UI updates), and Stripe webhooks (idempotent event handlers with signature verification).
+**Architecture Style:** Jamstack-inspired monolith with serverless API routes and layered security (rate limiting, webhook verification, input validation). Frontend uses server-side rendering (SSR) for initial page loads with client-side hydration for interactivity. Backend API routes handle authentication (database sessions), LLM orchestration (provider-agnostic adapter pattern), usage tracking (optimistic UI updates), and Lemon Squeezy webhooks (idempotent event handlers with signature verification).
 
 **Technology Foundation:** TypeScript-first stack using Next.js (React 18+) for unified frontend/backend, Prisma ORM with PgBouncer connection pooling for type-safe serverless database access, Supabase Auth for authentication with database as source of truth for tier/usage, and Tailwind CSS + shadcn/ui for rapid accessible UI development.
 
 **Key Integration Points:**
 - **LLM Provider API** (OpenAI/Anthropic/xAI/Google - Week 1 benchmarking determines selection) abstracted via adapter pattern for provider-agnostic switching, called from Next.js API routes with structured JSON response parsing, retry logic (3 attempts with exponential backoff), and cost tracking per interpretation
-- **Stripe API** for subscriptions and metered billing, with webhook endpoint implementing signature verification and idempotent event handling for payment lifecycle automation
+- **Lemon Squeezy API** for subscriptions and metered billing, with webhook endpoint implementing signature verification and idempotent event handling for payment lifecycle automation
 - **Supabase Auth** for magic link + Google OAuth authentication with row-level security policies
 - **Vercel KV (Redis)** for distributed rate limiting and LLM cost circuit breaker (3-layer protection)
 
@@ -81,7 +81,7 @@ towerofbabel/
 │   └── features/          # Feature-specific components
 ├── lib/                   # Shared utilities, services, types
 │   ├── llm/               # LLM service layer
-│   ├── stripe/            # Stripe integration
+│   ├── lemonsqueezy/      # Lemon Squeezy integration
 │   ├── db/                # Prisma client, queries
 │   └── types/             # Shared TypeScript types
 ├── prisma/                # Database schema and migrations
@@ -117,7 +117,7 @@ graph TB
 
     subgraph "External Services"
         H[LLM Provider API<br/>OpenAI/Anthropic/xAI/Google]
-        I[Stripe API<br/>Subscriptions + Metered Billing]
+        I[Lemon Squeezy API<br/>Subscriptions + Metered Billing]
         J[Supabase Auth<br/>Magic Link + Google OAuth]
         K[Vercel KV - Redis<br/>Cost Tracking + Rate Limiting]
     end
@@ -153,7 +153,7 @@ graph TB
    - Authentication (Supabase Auth for identity, DB for authorization)
    - Interpretation requests (LLM provider API calls with cost circuit breaker)
    - Usage tracking (database queries with connection pooling)
-   - Payment webhooks (Stripe with signature verification)
+   - Payment webhooks (Lemon Squeezy with signature verification)
 5. **Supabase PostgreSQL** stores user data, interpretation metadata, subscriptions (NO message content)
 6. **External integrations** are called from API routes, never directly from frontend (API key security)
 
@@ -189,18 +189,18 @@ graph TB
 - **LLM Provider Adapter Pattern:** Unified `LLMProvider` interface abstracts OpenAI, Anthropic, xAI, Google APIs. Configuration-driven selection via environment variable. Cost tracking per provider enables benchmarking and margin validation.
   - _Rationale:_ PRD TBD provider selection requires rapid switching capability. Privacy badge displays provider name dynamically. Future multi-provider routing (use cheapest for low-confidence requests) becomes trivial.
 
-- **BFF (Backend for Frontend):** API routes act as facade to external services (LLM, Stripe). Frontend never calls external APIs directly.
+- **BFF (Backend for Frontend):** API routes act as facade to external services (LLM, Lemon Squeezy). Frontend never calls external APIs directly.
   - _Rationale:_ API key security (never exposed to client), unified error handling, ability to switch LLM providers without frontend changes, aligns with PRD's "LLM provider transparency" (backend controls which provider).
 
-- **Webhook Event Bus (Simplified):** Stripe webhooks trigger database updates via `/api/webhooks/stripe`. Event handlers modular in `/lib/stripe/webhookHandlers`.
+- **Webhook Event Bus (Simplified):** Lemon Squeezy webhooks trigger database updates via `/api/webhooks/lemonsqueezy`. Event handlers modular in `/lib/lemonsqueezy/webhookHandlers`.
   - _Rationale:_ Subscription lifecycle automation (payment succeeded → reset usage count), security (webhook signature verification), extensibility (add more event handlers without modifying main route).
 
 **Resilience Patterns:**
 - **Retry with Exponential Backoff (LLM calls):** 3 attempts with 1s, 2s, 4s delays. Fail gracefully after 3rd attempt without consuming user quota (per FR19).
   - _Rationale:_ LLM APIs have transient failures (rate limits, timeouts). Retries improve success rate from ~95% to ~99.5%, aligns with NFR3 uptime goal.
 
-- **Idempotent Webhook Handlers:** Stripe webhooks processed once via `event.id` deduplication check. Prevents double-crediting, double-charging on retry.
-  - _Rationale:_ Stripe retries failed webhooks for 3 days. Idempotency prevents duplicate processing, critical for financial correctness.
+- **Idempotent Webhook Handlers:** Lemon Squeezy webhooks processed once via `event.id` deduplication check. Prevents double-crediting, double-charging on retry.
+  - _Rationale:_ Lemon Squeezy retries failed webhooks. Idempotency prevents duplicate processing, critical for financial correctness.
 
 **Security Patterns:**
 - **Layered Rate Limiting:**

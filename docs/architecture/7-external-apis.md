@@ -32,14 +32,16 @@ Week 1 benchmarking will determine final selection based on cost, quality, priva
 
 ---
 
-## Stripe API
-- **Base URL:** `https://api.stripe.com/v1`
-- **Authentication:** Bearer token (Secret Key)
+## Lemon Squeezy API
+- **Base URL:** `https://api.lemonsqueezy.com/v1`
+- **Authentication:** Bearer token (API Key)
 - **Key Endpoints:**
-  - `POST /checkout/sessions` - Create Checkout
-  - `POST /billing_portal/sessions` - Customer Portal
+  - `POST /checkouts` - Create Checkout
+  - `GET /subscriptions` - Retrieve subscriptions
+  - `POST /subscriptions/{id}` - Update subscription
   - Webhook events (signature verification mandatory)
-- **Idempotency:** Use `StripeEvent` table to prevent duplicate processing
+- **Idempotency:** Use `LemonSqueezyEvent` table to prevent duplicate processing
+- **Benefits:** Merchant of record (handles VAT/tax), supports 135+ countries including Israel
 
 ---
 

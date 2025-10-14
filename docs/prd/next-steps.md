@@ -6,7 +6,7 @@
 
 ## Architect Prompt
 
-"Hi Architect! I've completed the PRD for TowerOfBabel, a cross-cultural communication interpretation tool launching in 2-3 weeks. Please create the architecture document using `*create-architecture` mode with this PRD (docs/prd.md) and Project Brief (docs/brief_2_privacy_economics.md) as input. Key priorities: (1) Design LLM abstraction layer supporting 4 providers with structured JSON output parsing, (2) Plan Prisma schema migrations for User/Interpretation/Subscription models, (3) Design usage tracking & reset logic for 3 pricing tiers, (4) Plan Stripe webhook handling for subscriptions + metered billing, (5) Ensure 80% gross margin achievable with configurable Pro tier message limits. Critical: Week 1 LLM benchmarking determines provider selection and Pro tier pricing."
+"Hi Architect! I've completed the PRD for TowerOfBabel, a cross-cultural communication interpretation tool launching in 2-3 weeks. Please create the architecture document using `*create-architecture` mode with this PRD (docs/prd.md) and Project Brief (docs/brief_2_privacy_economics.md) as input. Key priorities: (1) Design LLM abstraction layer supporting 4 providers with structured JSON output parsing, (2) Plan Prisma schema migrations for User/Interpretation/Subscription models, (3) Design usage tracking & reset logic for 3 pricing tiers, (4) Plan Lemon Squeezy webhook handling for subscriptions + metered billing, (5) Ensure 80% gross margin achievable with configurable Pro tier message limits. Critical: Week 1 LLM benchmarking determines provider selection and Pro tier pricing."
 
 ---
 

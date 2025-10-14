@@ -5,8 +5,8 @@
 TowerOfBabel requires 4 primary entities:
 1. **User** - Account information, tier, usage tracking
 2. **Interpretation** - Metadata for each interpretation (NO message content)
-3. **Subscription** - Stripe subscription details
-4. **StripeEvent** - Webhook idempotency tracking
+3. **Subscription** - Lemon Squeezy subscription details
+4. **LemonSqueezyEvent** - Webhook idempotency tracking
 
 **Critical Design Principle:** **ZERO message content storage** (privacy-first, GDPR-compliant)
 
@@ -31,8 +31,8 @@ interface User {
   messages_reset_date: Date | null; // Next reset date for Pro tier (monthly billing)
   trial_start_date: Date;        // Trial start (for 14-day expiration check)
 
-  // Stripe Integration
-  stripe_customer_id: string | null; // Stripe customer ID (created on first payment)
+  // Lemon Squeezy Integration
+  lemonsqueezy_customer_id: string | null; // Lemon Squeezy customer ID (created on first payment)
 
   // Preferences (optional, future enhancement)
   default_sender_culture: string | null;   // Last used sender culture
@@ -85,7 +85,7 @@ interface Interpretation {
 
 ## Model 3: Subscription
 
-**Purpose:** Tracks Stripe subscription details for Pro tier users. Enables subscription lifecycle management via webhooks.
+**Purpose:** Tracks Lemon Squeezy subscription details for Pro tier users. Enables subscription lifecycle management via webhooks.
 
 **Key Attributes:**
 
@@ -93,8 +93,8 @@ interface Interpretation {
 interface Subscription {
   id: string;                           // UUID primary key
   user_id: string;                      // Foreign key to User (one-to-one)
-  stripe_subscription_id: string;       // Stripe subscription ID (e.g., "sub_1234...")
-  stripe_customer_id: string;           // Stripe customer ID (denormalized for convenience)
+  lemonsqueezy_subscription_id: string; // Lemon Squeezy subscription ID
+  lemonsqueezy_customer_id: string;     // Lemon Squeezy customer ID (denormalized for convenience)
 
   status: SubscriptionStatus;           // Current subscription state
   current_period_start: Date;           // Billing period start
@@ -110,20 +110,20 @@ interface Subscription {
 
 ---
 
-## Model 4: StripeEvent (NEW - Idempotency)
+## Model 4: LemonSqueezyEvent (NEW - Idempotency)
 
-**Purpose:** Track processed Stripe webhook events to prevent duplicate processing (replay attack protection).
+**Purpose:** Track processed Lemon Squeezy webhook events to prevent duplicate processing (replay attack protection).
 
 **Key Attributes:**
 
 ```typescript
-interface StripeEvent {
-  id: string;                     // UUID primary key
-  stripe_event_id: string;        // Stripe event ID (e.g., "evt_1234...") - UNIQUE
-  type: string;                   // Event type (e.g., "invoice.payment_succeeded")
-  data: Json;                     // Full event payload (for debugging)
-  processed_at: Date;             // When event was successfully processed
-  error: string | null;           // Error message if processing failed
+interface LemonSqueezyEvent {
+  id: string;                          // UUID primary key
+  lemonsqueezy_event_id: string;       // Lemon Squeezy event ID - UNIQUE
+  type: string;                        // Event type (e.g., "subscription_payment_success")
+  data: Json;                          // Full event payload (for debugging)
+  processed_at: Date;                  // When event was successfully processed
+  error: string | null;                // Error message if processing failed
 }
 ```
 
@@ -156,8 +156,8 @@ model User {
   messages_reset_date       DateTime?
   trial_start_date          DateTime        @default(now())
 
-  // Stripe Integration
-  stripe_customer_id        String?         @unique
+  // Lemon Squeezy Integration
+  lemonsqueezy_customer_id  String?         @unique
 
   // Preferences
   default_sender_culture    String?
@@ -205,12 +205,12 @@ model Interpretation {
   @@map("interpretations")
 }
 
-// Subscription (Stripe)
+// Subscription (Lemon Squeezy)
 model Subscription {
-  id                      String    @id @default(uuid())
-  user_id                 String    @unique
-  stripe_subscription_id  String    @unique
-  stripe_customer_id      String
+  id                           String    @id @default(uuid())
+  user_id                      String    @unique
+  lemonsqueezy_subscription_id String    @unique
+  lemonsqueezy_customer_id     String
 
   status                  String    // SubscriptionStatus
   current_period_start    DateTime
@@ -225,22 +225,22 @@ model Subscription {
   // Relations
   user                    User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@index([stripe_subscription_id])
+  @@index([lemonsqueezy_subscription_id])
   @@index([user_id])
   @@map("subscriptions")
 }
 
-// Stripe webhook event tracking (idempotency)
-model StripeEvent {
-  id               String    @id @default(uuid())
-  stripe_event_id  String    @unique
-  type             String
-  data             Json
-  processed_at     DateTime  @default(now())
-  error            String?
+// Lemon Squeezy webhook event tracking (idempotency)
+model LemonSqueezyEvent {
+  id                     String    @id @default(uuid())
+  lemonsqueezy_event_id  String    @unique
+  type                   String
+  data                   Json
+  processed_at           DateTime  @default(now())
+  error                  String?
 
-  @@index([stripe_event_id])
-  @@map("stripe_events")
+  @@index([lemonsqueezy_event_id])
+  @@map("lemonsqueezy_events")
 }
 ```
 

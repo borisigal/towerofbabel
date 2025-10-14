@@ -55,7 +55,7 @@
       - [Acceptance Criteria](./epic-3-usage-tracking-pricing-tiers.md#acceptance-criteria)
     - [Story 3.3: Create Upgrade Modal with Pricing Tiers](./epic-3-usage-tracking-pricing-tiers.md#story-33-create-upgrade-modal-with-pricing-tiers)
       - [Acceptance Criteria](./epic-3-usage-tracking-pricing-tiers.md#acceptance-criteria)
-    - [Story 3.4: Integrate Stripe for Subscriptions and Pay-As-You-Go](./epic-3-usage-tracking-pricing-tiers.md#story-34-integrate-stripe-for-subscriptions-and-pay-as-you-go)
+    - [Story 3.4: Integrate Lemon Squeezy for Subscriptions and Pay-As-You-Go](./epic-3-usage-tracking-pricing-tiers.md#story-34-integrate-lemonsqueezy-for-subscriptions-and-pay-as-you-go)
       - [Acceptance Criteria](./epic-3-usage-tracking-pricing-tiers.md#acceptance-criteria)
     - [Story 3.5: Implement Billing Portal and Subscription Management](./epic-3-usage-tracking-pricing-tiers.md#story-35-implement-billing-portal-and-subscription-management)
       - [Acceptance Criteria](./epic-3-usage-tracking-pricing-tiers.md#acceptance-criteria)

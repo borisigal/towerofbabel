@@ -14,7 +14,7 @@ TowerOfBabel follows a **layered component architecture** with clear separation 
 1. **API Routes** - Request handlers (Next.js API routes)
 2. **Service Layer** - Business logic (LLM, usage, pricing)
 3. **Repository Layer** - Database access (Prisma)
-4. **External Integration Layer** - LLM, Stripe, Supabase Auth
+4. **External Integration Layer** - LLM, Lemon Squeezy, Supabase Auth
 
 ---
 
@@ -162,14 +162,14 @@ const user = await prisma.user.findUnique({
 
 ---
 
-## Component 5: Stripe Integration Service
+## Component 5: Lemon Squeezy Integration Service
 
 **Responsibility:** Payment processing, webhook handling with idempotency.
 
 **Implementation Location:**
 ```
-/lib/stripe/
-  ├── stripeClient.ts
+/lib/lemonsqueezy/
+  ├── lemonsqueezyClient.ts
   ├── checkoutService.ts
   ├── portalService.ts
   ├── webhookHandlers/
@@ -178,22 +178,22 @@ const user = await prisma.user.findUnique({
   │   └── subscriptionDeleted.ts
   └── webhookService.ts
 
-/app/api/webhooks/stripe/route.ts
+/app/api/webhooks/lemonsqueezy/route.ts
 ```
 
 **Idempotency Pattern:**
 ```typescript
-// Check StripeEvent table before processing
-const existing = await prisma.stripeEvent.findUnique({
-  where: { stripe_event_id: event.id }
+// Check LemonSqueezyEvent table before processing
+const existing = await prisma.lemonSqueezyEvent.findUnique({
+  where: { lemonsqueezy_event_id: event.id }
 });
 if (existing) return { received: true }; // Already processed
 
 // Process + mark as processed in transaction
 await prisma.$transaction(async (tx) => {
   await handleWebhookEvent(event, tx);
-  await tx.stripeEvent.create({
-    data: { stripe_event_id: event.id, type: event.type, data: event.data }
+  await tx.lemonSqueezyEvent.create({
+    data: { lemonsqueezy_event_id: event.id, type: event.type, data: event.data }
   });
 });
 ```
@@ -252,14 +252,14 @@ graph TB
     subgraph "API Layer"
         E[/api/interpret]
         F[/api/user]
-        G[/api/webhooks/stripe]
+        G[/api/webhooks/lemonsqueezy]
     end
 
     subgraph "Service Layer"
         H[LLM Provider Service]
         I[Cost Circuit Breaker - CRITICAL]
         J[Usage Tracking Service]
-        K[Stripe Integration Service]
+        K[Lemon Squeezy Integration Service]
     end
 
     subgraph "Data Layer"
@@ -269,7 +269,7 @@ graph TB
 
     subgraph "External Services"
         N[LLM API]
-        O[Stripe API]
+        O[Lemon Squeezy API]
         P[Supabase Auth]
         Q[Vercel KV - Redis]
     end

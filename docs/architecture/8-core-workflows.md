@@ -46,7 +46,7 @@ sequenceDiagram
     participant Frontend
     participant API
     participant DB
-    participant Stripe
+    participant LemonSqueezy
 
     User->>Frontend: Submit 11th interpretation
     Frontend->>API: POST /api/interpret
@@ -57,15 +57,15 @@ sequenceDiagram
 
     User->>Frontend: Click "Subscribe to Pro"
     Frontend->>API: POST /api/checkout { type: "pro_subscription" }
-    API->>Stripe: Create Checkout Session
-    Stripe-->>API: { checkout_url }
-    Frontend->>User: Redirect to Stripe
+    API->>LemonSqueezy: Create Checkout Session
+    LemonSqueezy-->>API: { checkout_url }
+    Frontend->>User: Redirect to Lemon Squeezy
 
-    User->>Stripe: Enter payment
-    Stripe->>API: Webhook: checkout.session.completed
-    API->>DB: Check StripeEvent (idempotency)
+    User->>LemonSqueezy: Enter payment
+    LemonSqueezy->>API: Webhook: subscription_payment_success
+    API->>DB: Check LemonSqueezyEvent (idempotency)
     API->>DB: Update user (tier=pro, messages_used=0)
-    Stripe-->>User: Redirect to dashboard
+    LemonSqueezy-->>User: Redirect to dashboard
 
     Frontend->>API: GET /api/user (refresh)
     API->>DB: Query tier/usage from DATABASE

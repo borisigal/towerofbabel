@@ -36,7 +36,7 @@
 6. **NEW:** Environment variable template created:
    - `.env.local.example` file with all required variables documented
    - Comments explain each variable's purpose
-   - Template includes: DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, STRIPE_SECRET_KEY, LLM_API_KEY (placeholders)
+   - Template includes: DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, LEMONSQUEEZY_API_KEY, LLM_API_KEY (placeholders)
 7. **NEW:** Health-check API route created at `/api/health`:
    - Returns JSON: `{"status": "ok", "timestamp": "ISO-8601", "database": "pending"}`
    - Database status shows "pending" until Story 1.3 completes
@@ -113,9 +113,9 @@
    - Logs connection pool metrics every 5 minutes
    - Provides `executeWithCircuitBreaker<T>()` wrapper function for all database operations
 5. Initial schema defined with User, Interpretation, and Subscription models matching technical assumptions:
-   - **User:** id, email, name, created_at, tier, messages_used_count, messages_reset_date, stripe_customer_id, is_admin
+   - **User:** id, email, name, created_at, tier, messages_used_count, messages_reset_date, lemonsqueezy_customer_id, is_admin
    - **Interpretation:** id, user_id, timestamp, culture_sender, culture_receiver, character_count, interpretation_type, feedback, cost_usd, llm_provider, response_time_ms
-   - **Subscription:** id, user_id, stripe_subscription_id, status, current_period_end
+   - **Subscription:** id, user_id, lemonsqueezy_subscription_id, status, current_period_end
 6. Initial migration created and applied successfully to development database
 7. Prisma Client generated with TypeScript types
 8. Database connection tested via Prisma Studio or simple query (e.g., `prisma.user.count()`)

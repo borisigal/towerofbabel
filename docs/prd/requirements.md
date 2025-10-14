@@ -14,7 +14,7 @@
 10. **FR10:** The system shall display approaching-limit notifications when users are near their usage limit
 11. **FR11:** The system shall block further interpretations when usage limits are reached and present upgrade options including specific Pro tier benefits: "Subscribe to Pro ($10/month for [X] messages)" and "Pay $0.50 for single interpretation"
 12. **FR12:** The system shall support three pricing tiers: Free Trial (14 days, 10 messages), Pay-As-You-Go ($0.50/message), Pro ($10/month with TBD message limit)
-13. **FR13:** The system shall integrate with Stripe for subscription billing and metered pay-per-use billing
+13. **FR13:** The system shall integrate with Lemon Squeezy for subscription billing and metered pay-per-use billing
 14. **FR14:** The system shall provide a responsive web interface that works on mobile, tablet, and desktop devices
 15. **FR15:** The system shall provide Progressive Web App (PWA) installation capabilities (add to home screen, app-like experience) but requires internet connectivity for all interpretation functionality
 16. **FR16:** The system shall display a privacy badge showing "Processed by [Provider] • No message storage by TowerOfBabel" and link to provider privacy policy
@@ -23,7 +23,7 @@
 19. **FR20:** The system shall provide a user account settings page where users can request full data deletion (GDPR compliance)
 20. **FR21:** The system shall display side-by-side comparison view for outbound optimization showing original message and AI-suggested optimized version
 21. **FR22:** The system shall handle trial expiration by both time (14 days) AND message limit (10 messages)—whichever comes first blocks further use
-22. **FR23:** The system shall allow users to cancel subscriptions and view billing history through Stripe Customer Portal integration
+22. **FR23:** The system shall allow users to cancel subscriptions and view billing history through Lemon Squeezy Customer Portal integration
 23. **FR24:** The system shall display the privacy badge "Processed by [Provider] • No message storage" prominently on both the landing page and in-app interpretation interface
 
 ## Non-Functional Requirements
@@ -37,7 +37,7 @@
 7. **NFR7:** The system shall enforce rate limiting to prevent abuse (specific limits TBD based on security analysis)
 8. **NFR8:** The system shall enforce HTTPS for all communications
 9. **NFR9:** The system shall comply with GDPR requirements including cookie consent, privacy policy, and data deletion on request
-10. **NFR10:** The system shall maintain PCI compliance through Stripe (no direct handling of payment card data)
+10. **NFR10:** The system shall maintain PCI compliance through Lemon Squeezy (no direct handling of payment card data)
 11. **NFR11:** The system shall meet WCAG 2.1 Level AA accessibility standards for core interpretation workflow (text input, culture selection, interpretation display, emotion gauges)
 12. **NFR12:** The system shall gracefully degrade when LLM provider experiences outages by displaying status message and queuing requests for retry (max 5-minute queue)
 

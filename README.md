@@ -47,7 +47,7 @@ npm --version
    - Database credentials (Story 1.3)
    - Supabase authentication (Story 1.4)
    - LLM provider API keys (Epic 2)
-   - Stripe payment keys (Epic 3)
+   - Lemon Squeezy payment keys (Epic 3)
 
 ## Running the Development Server
 
@@ -212,7 +212,7 @@ This is the foundation (Story 1.1). Upcoming stories will add:
 - **Story 1.4**: Supabase authentication
 - **Story 1.5**: LLM integration and cost protection
 - **Epic 2**: Cultural interpretation features
-- **Epic 3**: Payment processing with Stripe
+- **Epic 3**: Payment processing with Lemon Squeezy
 
 ## License
 

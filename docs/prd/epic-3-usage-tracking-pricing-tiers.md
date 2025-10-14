@@ -1,6 +1,6 @@
 # Epic 3: Usage Tracking & Pricing Tiers
 
-**Expanded Goal:** Build complete usage tracking system, enforce pricing tier limits (trial: 10 messages/14 days, pay-as-you-go: $0.50/message, Pro: TBD messages/month), integrate Stripe for subscription and metered billing, display usage indicators in UI, and implement limit notification and upgrade modals to enable monetization and validate unit economics.
+**Expanded Goal:** Build complete usage tracking system, enforce pricing tier limits (trial: 10 messages/14 days, pay-as-you-go: $0.50/message, Pro: TBD messages/month), integrate Lemon Squeezy for subscription and metered billing, display usage indicators in UI, and implement limit notification and upgrade modals to enable monetization and validate unit economics.
 
 ---
 
@@ -14,7 +14,7 @@
 
 1. Trial tier enforcement: Block interpretations when messages_used_count ≥10 OR 14 days elapsed since account creation
 2. Pro tier enforcement: Block interpretations when messages_used_count ≥ configured limit (TBD)
-3. Pay-as-you-go tier: No limit enforcement (will charge per use via Stripe)
+3. Pay-as-you-go tier: No limit enforcement (will charge per use via Lemon Squeezy)
 4. API route /api/interpret checks tier and limits before processing LLM call
 5. Limit exceeded error returns 403 status with message: `{"error": "limit_exceeded", "tier": "trial", "messages_used": 10}`
 6. Usage counter reset logic: Pro tier resets messages_used_count to 0 when current_period_end reached (monthly billing cycle)
@@ -61,8 +61,8 @@
    - **Pay-As-You-Go:** "$0.50 per interpretation" with "Buy 1 Interpretation" CTA button
    - **Pro:** "$10/month for [TBD] messages" with "Subscribe to Pro" CTA button (primary recommendation)
 3. Modal includes brief value proposition: "Continue interpreting cross-cultural messages with unlimited confidence"
-4. "Subscribe to Pro" button redirects to Stripe Checkout (Story 3.4)
-5. "Buy 1 Interpretation" button redirects to Stripe Payment Link for one-time $0.50 charge
+4. "Subscribe to Pro" button redirects to Lemon Squeezy Checkout (Story 3.4)
+5. "Buy 1 Interpretation" button redirects to Lemon Squeezy payment link for one-time $0.50 charge
 6. Modal dismissible with "Maybe later" or close button (but user still can't interpret until upgraded)
 7. Modal also accessible from navigation menu ("Upgrade" link) for proactive upgrades
 8. Modal responsive (readable on mobile, tablet, desktop)
@@ -71,7 +71,7 @@
 
 ---
 
-## Story 3.4: Integrate Stripe for Subscriptions and Pay-As-You-Go
+## Story 3.4: Integrate Lemon Squeezy for Subscriptions and Pay-As-You-Go
 
 **As a** user,
 **I want** to subscribe to Pro tier or pay per interpretation,
@@ -79,21 +79,21 @@
 
 ### Acceptance Criteria
 
-1. Stripe account created and configured (test mode and production mode)
-2. Stripe Product created for Pro tier: "$10/month recurring subscription"
-3. Stripe Price created for pay-as-you-go: "$0.50 per interpretation" (metered billing)
-4. Stripe Checkout session created when user clicks "Subscribe to Pro"
-5. Checkout session redirects to Stripe hosted page, then back to success URL after payment
-6. Stripe Payment Link created for one-time $0.50 interpretation purchase
-7. Webhook endpoint created at /api/webhooks/stripe to handle events:
-   - `checkout.session.completed`: Create/update subscription in database
-   - `invoice.payment_succeeded`: Reset usage counter for Pro users
-   - `customer.subscription.deleted`: Downgrade user to pay-as-you-go tier
-8. User's stripe_customer_id stored in database on first payment
-9. Subscription record created/updated with stripe_subscription_id, status, current_period_end
+1. Lemon Squeezy account created and configured (test mode and production mode)
+2. Lemon Squeezy Product created for Pro tier: "$10/month recurring subscription"
+3. Lemon Squeezy Variant created for pay-as-you-go: "$0.50 per interpretation" (one-time purchase)
+4. Lemon Squeezy Checkout session created when user clicks "Subscribe to Pro"
+5. Checkout session redirects to Lemon Squeezy hosted page, then back to success URL after payment
+6. Lemon Squeezy payment link created for one-time $0.50 interpretation purchase
+7. Webhook endpoint created at /api/webhooks/lemonsqueezy to handle events:
+   - `order_created`: Create/update subscription in database
+   - `subscription_payment_success`: Reset usage counter for Pro users
+   - `subscription_cancelled`: Downgrade user to pay-as-you-go tier
+8. User's lemonsqueezy_customer_id stored in database on first payment
+9. Subscription record created/updated with lemonsqueezy_subscription_id, status, current_period_end
 10. Successful payment updates user tier to "pro" and resets messages_used_count to 0
 11. Webhook signature verification implemented (prevent fraudulent requests)
-12. Stripe integration tested in test mode with test cards
+12. Lemon Squeezy integration tested in test mode with test cards
 13. Error handling for failed payments displays user-friendly message
 
 ---
@@ -107,18 +107,18 @@
 ### Acceptance Criteria
 
 1. "Manage Billing" link added to account settings page
-2. Link redirects to Stripe Customer Portal (hosted by Stripe)
+2. Link redirects to Lemon Squeezy Customer Portal (hosted by Lemon Squeezy)
 3. Customer Portal allows users to:
    - View billing history and invoices
    - Update payment method
    - Cancel subscription
    - Download receipts
-4. Customer Portal session created via Stripe API when user clicks "Manage Billing"
+4. Customer Portal URL created via Lemon Squeezy API when user clicks "Manage Billing"
 5. Return URL configured to redirect back to TowerOfBabel dashboard after portal session
-6. Subscription cancellation handled via webhook (customer.subscription.deleted)
+6. Subscription cancellation handled via webhook (subscription_cancelled)
 7. Canceled users downgraded to pay-as-you-go tier (not blocked, just charged per use)
 8. Cancellation confirmation displayed in dashboard after webhook processed
-9. Stripe Customer Portal branding configured with TowerOfBabel logo/colors
+9. Lemon Squeezy checkout branding configured with TowerOfBabel logo/colors
 10. Non-paying users (still on trial) see message: "No billing information yet. Upgrade to Pro to manage billing."
 
 ---

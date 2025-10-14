@@ -18,7 +18,7 @@
 - Estimated time savings: 4-8 hours across Epic 1-5 (faster development with vanilla patterns)
 
 **Constraints Imposed:**
-- Manual setup of Supabase Auth, Prisma schema, Stripe integration (all well-documented)
+- Manual setup of Supabase Auth, Prisma schema, Lemon Squeezy integration (all well-documented)
 - Full responsibility for architecture decisions (acceptable - that's this document's purpose)
 
 ---

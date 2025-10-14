@@ -66,10 +66,10 @@ function processWebhook(event: any) {
   console.log(event.type);
 }
 
-// ✅ GOOD - Using proper Stripe types
-import Stripe from 'stripe';
+// ✅ GOOD - Using proper Lemon Squeezy types
+import { LemonSqueezy } from '@lemonsqueezy/lemonsqueezy.js';
 
-function processWebhook(event: Stripe.Event) {
+function processWebhook(event: LemonSqueezy.WebhookEvent) {
   console.log(event.type);
 }
 
@@ -561,9 +561,9 @@ describe('Payment Flow - Immediate Tier Update', () => {
     // 1. Create trial user with 10/10 messages exhausted
     const user = await createTestUser({ tier: 'trial', messages_used_count: 10 });
 
-    // 2. Simulate Stripe checkout.session.completed webhook
-    await simulateStripeWebhook('checkout.session.completed', {
-      customer_id: user.stripe_customer_id,
+    // 2. Simulate Lemon Squeezy subscription_payment_success webhook
+    await simulateLemonSqueezyWebhook('subscription_payment_success', {
+      customer_id: user.lemonsqueezy_customer_id,
       subscription_id: 'sub_test123'
     });
 
@@ -747,7 +747,7 @@ git commit -m "feat(admin): add cost metrics monitoring endpoint"
 - [ ] Rate limiting implemented where required
 - [ ] Database queries use explicit `select` (no full table fetches)
 - [ ] No sensitive data logged (API keys, passwords, message content)
-- [ ] Stripe webhook signature verified before processing
+- [ ] Lemon Squeezy webhook signature verified before processing
 - [ ] No `user.app_metadata` usage for tier/usage checks (ESLint should catch)
 
 **Architecture Compliance:**

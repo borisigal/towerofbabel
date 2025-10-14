@@ -15,7 +15,7 @@
   ├── admin/
   │   └── cost-metrics/route.ts
   └── webhooks/
-      └── stripe/route.ts
+      └── lemonsqueezy/route.ts
 ```
 
 ## API Route Template (with CRITICAL mitigations)

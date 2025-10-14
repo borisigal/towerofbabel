@@ -16,7 +16,7 @@ towerofbabel/
 ├── lib/
 │   ├── auth/                          # Supabase Auth + README
 │   ├── llm/                           # LLM provider + cost circuit breaker
-│   ├── stripe/                        # Stripe + idempotency
+│   ├── lemonsqueezy/                  # Lemon Squeezy + idempotency
 │   ├── services/                      # Business logic
 │   ├── db/                            # Prisma + connection pooling
 │   ├── middleware/

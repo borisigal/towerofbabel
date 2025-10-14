@@ -17,7 +17,7 @@
 | **File Storage** | Supabase Storage | Latest | (Future) User-uploaded files if needed | Not required for MVP (no file uploads), 1GB free tier, S3-compatible API, already in stack |
 | **Authentication** | Supabase Auth | Latest | Magic link email + Google OAuth, session management | Built-in magic link emails (no separate email service), generous free tier, row-level security (RLS) policies, saves $120+/year vs. Resend |
 | **Frontend Testing** | Vitest + React Testing Library | Vitest 1.2+, RTL 14+ | Unit tests for components, hooks, utility functions | Fast (Vite-powered), TypeScript-first, Jest-compatible API, PRD specifies Vitest for speed |
-| **Backend Testing** | Vitest + Supertest | Vitest 1.2+, Supertest 6.3+ | Integration tests for API routes | Same test runner as frontend (consistency), Supertest for HTTP assertions, mock LLM/Stripe calls |
+| **Backend Testing** | Vitest + Supertest | Vitest 1.2+, Supertest 6.3+ | Integration tests for API routes | Same test runner as frontend (consistency), Supertest for HTTP assertions, mock LLM/Lemon Squeezy calls |
 | **E2E Testing** | (Deferred to Phase 2) | - | End-to-end workflow testing | PRD explicitly defers E2E automation (Playwright/Cypress) to Phase 2 for MVP speed |
 | **Build Tool** | Next.js Built-in | 14.1+ | Webpack/Turbopack bundler, code splitting | Next.js handles bundling, no separate Vite/Webpack config needed, automatic code splitting, tree-shaking |
 | **Bundler** | Turbopack (Next.js 14) | 14.1+ | Fast bundler for development, production builds | Next.js 14 uses Turbopack for dev (10x faster than Webpack), Webpack for production (mature, stable) |
@@ -27,7 +27,7 @@
 | **Monitoring** | Vercel Analytics + Sentry | Sentry SDK 7.100+ | Core Web Vitals, error tracking, performance monitoring | Vercel Analytics built-in (FCP, TTI), Sentry for error tracking + performance profiling, alerts on critical errors |
 | **Logging** | Pino (structured logging) | 8.17+ | Structured JSON logs for debugging, cost tracking | Production-grade logging, structured output (easy to query), log LLM costs/durations, Vercel automatically ingests logs |
 | **LLM Provider (TBD)** | OpenAI / Anthropic / xAI / Google | GPT-4 Turbo / Claude 3.5 Sonnet / Grok / Gemini 1.5 Pro | Cultural interpretation via LLM API calls | **Week 1 benchmarking determines selection** based on: (1) cost < $0.02/interpretation, (2) quality of cultural output, (3) data retention policy, (4) response time 3-5s |
-| **Payment Processing** | Stripe | SDK 14.14+ | Subscriptions ($10/month Pro) + metered billing ($0.50 PAYG) | Industry-standard, PCI-compliant (NFR10), excellent webhook system, supports both subscription + usage-based billing, no direct card handling |
+| **Payment Processing** | Lemon Squeezy | SDK 3.0+ | Subscriptions ($10/month Pro) + metered billing ($0.50 PAYG) | Merchant of record (handles VAT/tax compliance), supports 135+ countries including Israel, PCI-compliant (NFR10), excellent webhook system, supports both subscription + usage-based billing, no direct card handling |
 | **Code Quality** | ESLint + Prettier | ESLint 8+, Prettier 3+ | Linting TypeScript, auto-formatting | Enforce code standards, PRD specifies ESLint + Prettier, auto-format on save, catches common errors, includes custom rule for JWT metadata check, Use good JS docs style comments on all public functions, interfaces etc... |
 
 ---
@@ -81,7 +81,7 @@
 - Tailwind CSS: 1
 - shadcn/ui: 0 (copy-paste, not npm dependency)
 - Zustand: 1
-- Stripe: 1
+- Lemon Squeezy: 1
 - Vercel KV: 1 (`@vercel/kv`)
 - Sentry: 1
 - Pino: 1

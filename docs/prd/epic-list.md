@@ -18,7 +18,7 @@
 **Goal:** Implement the core interpretation functionality (inbound analysis) with LLM integration, dynamic emotion detection, and adaptive display logic (single vs. dual scores based on culture selection), delivering the primary user value proposition.
 
 ## Epic 3: Usage Tracking & Pricing Tiers
-**Goal:** Build usage tracking, pricing tier enforcement (trial, pay-as-you-go, Pro), Stripe integration for payments, and limit notifications to validate unit economics and enable monetization.
+**Goal:** Build usage tracking, pricing tier enforcement (trial, pay-as-you-go, Pro), Lemon Squeezy integration for payments, and limit notifications to validate unit economics and enable monetization.
 
 ## Epic 4: Outbound Optimization & Quality Feedback
 **Goal:** Deliver outbound message optimization with side-by-side comparison UI and thumbs up/down feedback mechanism for both inbound and outbound interpretations to complete bidirectional workflow and enable quality tracking.
