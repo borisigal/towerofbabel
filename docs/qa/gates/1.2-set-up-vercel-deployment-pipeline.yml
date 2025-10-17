@@ -1,0 +1,121 @@
+# Quality Gate Decision - Story 1.2
+# <!-- Powered by BMAD™ Core -->
+
+schema: 1
+story: "1.2"
+story_title: "Set Up Vercel Deployment Pipeline"
+gate: PASS
+status_reason: "All 7 acceptance criteria met with no issues. Deployment pipeline operational with production URL live and health-check verified."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-14T20:45:00Z"
+
+# Issues (if any)
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Waiver
+waiver: { active: false }
+
+# Quality Evidence
+evidence:
+  tests_reviewed: 0  # Infrastructure story - no new tests required
+  deployment_verified: true
+  production_url_live: true
+  health_check_verified: true
+  preview_workflow_tested: true
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7]
+    ac_gaps: []
+
+# NFR Validation
+nfr_validation:
+  reliability:
+    status: PASS
+    notes: "Zero-downtime deployments, automatic rollback on build failure"
+  performance:
+    status: PASS
+    notes: "Edge network deployment with global CDN, Vercel auto-optimization enabled"
+  security:
+    status: PASS
+    notes: "Preview deployments protected with Vercel authentication, environment variables properly scoped"
+  maintainability:
+    status: PASS
+    notes: "Comprehensive deployment documentation in README, clear troubleshooting guide"
+
+# Detailed Validation Results
+validation_summary: |
+  Comprehensive validation performed on Vercel deployment infrastructure:
+
+  ✅ AC #1: Vercel project created and linked to GitHub repository (borisigal/towerofbabel)
+  ✅ AC #2: Automatic preview deployments configured for all branches with unique URLs
+  ✅ AC #3: Production deployment configured for main branch (https://towerofbabel.vercel.app)
+  ✅ AC #4: 16 environment variables configured in Vercel (Production + Preview environments)
+  ✅ AC #5: Successful deployment verified - production URL accessible
+  ✅ AC #6: Build logs show successful Next.js build with zero errors
+  ✅ AC #7: Health-check route verified returning 200 OK with correct JSON structure
+
+  LIVE PRODUCTION VERIFICATION (2025-10-14T20:42:26Z):
+  ✅ curl https://towerofbabel.vercel.app/api/health → 200 OK
+  ✅ Response: {"status": "ok", "timestamp": "2025-10-14T20:42:26.624Z", "database": "pending"}
+  ✅ Database field correctly shows "pending" (Story 1.3 not yet implemented)
+
+strengths: |
+  - Production deployment pipeline fully operational with zero-downtime deployments
+  - Automatic CI/CD integration via Git (push to main → production, feature branches → preview)
+  - Health-check endpoint verified working in production environment
+  - Preview deployment workflow tested end-to-end (test/deployment-check branch)
+  - All 16 environment variables configured with appropriate placeholder values
+  - Environment variables properly scoped (Production, Preview, Development)
+  - Comprehensive deployment documentation added to README.md including:
+    * Production and preview deployment workflows
+    * Environment variable management
+    * Health-check verification instructions
+    * Deployment protection explanation
+    * Troubleshooting guide for common issues
+  - Dev Agent correctly adapted to Lemon Squeezy (not Stripe) per Story 1.1 migration
+  - Build process validated: TypeScript compilation, ESLint, Next.js build all passing
+  - Vercel Deployment Protection enabled on preview deployments (authentication required)
+  - Next Steps section in README updated to reflect Stories 1.1-1.2 completion
+
+observations: |
+  - Task 4 specification lists Stripe environment variables, but implementation correctly used Lemon Squeezy variables (following Story 1.1 migration). This shows good judgment and awareness of codebase state.
+  - No custom domain configured (optional per AC #3, appropriate for MVP)
+  - vercel.json file not created (not required - Vercel auto-detection works perfectly)
+
+next_steps: |
+  Ready to proceed to Story 1.3 (PostgreSQL Database with Prisma).
+  Deployment pipeline will automatically handle:
+  - Database migration deployments via `prisma migrate deploy`
+  - Environment variable updates for Supabase credentials
+  - Health-check endpoint enhancement to test database connectivity
+
+deployment_evidence: |
+  **Production Environment:**
+  - URL: https://towerofbabel.vercel.app
+  - Health-check: VERIFIED (200 OK, correct JSON response)
+  - Build: SUCCESS (TypeScript, ESLint, Next.js build all passing)
+  - Repository: GitHub (borisigal/towerofbabel)
+
+  **Preview Environment:**
+  - Workflow: TESTED (test/deployment-check branch created, unique URL generated)
+  - Protection: ENABLED (Vercel authentication required)
+  - Auto-updates: CONFIRMED (commits update preview deployment)
+
+  **Environment Variables:**
+  - Total configured: 16 (matches .env.local.example)
+  - Scope: Production, Preview, Development
+  - Placeholders for future stories: DATABASE_URL, SUPABASE_*, LEMONSQUEEZY_*, LLM keys, KV_*, SENTRY_DSN
+  - Actual values: Cost limits, LLM_PROVIDER default, PRO_MESSAGE_LIMIT, NODE_ENV
+
+  **Build Verification:**
+  - TypeScript compilation: PASS
+  - ESLint checks: PASS
+  - Next.js build: PASS
+  - Asset optimization: AUTO (Vercel)
+  - Global CDN deployment: AUTO (Vercel Edge Network)

@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+// Stores user authentication and tier information.
+// Links to Supabase Auth via id (UUID matches auth.users.id)
+//
+// CRITICAL: tier and usage fields are source of truth for authorization.
+// NEVER use JWT app_metadata for tier checks - always query this table.
+//
+// @see architecture/14-critical-risk-mitigation.md#risk-1
+model User {
+  id                        String          @id @default(uuid())
+  email                     String          @unique
+  name                      String?
+  created_at                DateTime        @default(now())
+  tier                      String          @default("trial") // "trial" | "payg" | "pro"
+  messages_used_count       Int             @default(0)
+  messages_reset_date       DateTime        @default(now())
+  lemonsqueezy_customer_id  String?         @unique
+  is_admin                  Boolean         @default(false)
+
+  // Relations
+  interpretations           Interpretation[]
+  subscription              Subscription?
+
+  // Indexes for performance
+  @@index([email])
+  @@index([lemonsqueezy_customer_id])
+  @@map("users")
+}
+
+// ============================================
+// INTERPRETATION MODEL
+// ============================================
+// Stores metadata about cultural interpretations.
+// PRIVACY-FIRST: NO message content stored, only metadata.
+//
+// This enables:
+// - GDPR compliance (no user content to delete)
+// - Cost tracking and margin validation
+// - Usage analytics without privacy concerns
+//
+// @see architecture/4-data-models.md#privacy-first-design
+model Interpretation {
+  id                   String   @id @default(uuid())
+  user_id              String
+  timestamp            DateTime @default(now())
+  culture_sender       String
+  culture_receiver     String
+  character_count      Int
+  interpretation_type  String   // "inbound" | "outbound" | "both"
+  feedback             String?  // Optional user rating, NOT message content
+  cost_usd             Decimal  @db.Decimal(10, 4)
+  llm_provider         String   // "openai" | "anthropic" | "xai" | "google"
+  response_time_ms     Int
+
+  // Relations
+  user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Indexes for performance
+  @@index([user_id, timestamp])
+  @@map("interpretations")
+}
+
+// ============================================
+// SUBSCRIPTION MODEL
+// ============================================
+// Tracks Lemon Squeezy subscriptions for Pro tier users.
+// One-to-one relationship with User (user can have max 1 subscription).
+//
+// Status values:
+// - "active": Pro subscription active
+// - "canceled": Canceled but still active until period end
+// - "expired": Subscription expired
+// - "paused": Payment failed, awaiting retry
+//
+// @see Epic 3 - Payment Integration
+model Subscription {
+  id                           String    @id @default(uuid())
+  user_id                      String    @unique
+  lemonsqueezy_subscription_id String    @unique
+  lemonsqueezy_customer_id     String
+  status                       String
+  current_period_end           DateTime?
+
+  // Relations
+  user                         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Indexes for performance
+  @@index([user_id])
+  @@index([lemonsqueezy_subscription_id])
+  @@map("subscriptions")
+}
+
+// ============================================
+// LEMONSQUEEZY EVENT MODEL
+// ============================================
+// Stores Lemon Squeezy webhook events for idempotency.
+// Prevents duplicate processing when Lemon Squeezy retries webhooks.
+//
+// Included in Epic 1 foundation to avoid database migration when
+// payment integration is implemented in Epic 3.
+//
+// Process:
+// 1. Webhook arrives with lemonsqueezy_event_id
+// 2. Check if lemonsqueezy_event_id exists in this table
+// 3. If exists: Return 200 OK, skip processing (idempotent)
+// 4. If not exists: Process webhook, insert event record
+//
+// @see Epic 3 - Payment Integration
+model LemonSqueezyEvent {
+  id                     String    @id @default(uuid())
+  lemonsqueezy_event_id  String    @unique
+  type                   String
+  data                   Json
+  processed_at           DateTime  @default(now())
+
+  // Indexes for performance
+  @@index([lemonsqueezy_event_id])
+  @@map("lemonsqueezy_events")
+}
