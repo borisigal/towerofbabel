@@ -66,13 +66,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: { [key: string]: unknown }) {
-          // Set cookie in Next.js cookies() store
-          cookieStore.set({
-            name,
-            value,
-            ...options,
-          });
-          // Set cookie in response
+          // Set cookie in response (cookies() is read-only in route handlers)
           response.cookies.set({
             name,
             value,
@@ -80,12 +74,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           });
         },
         remove(name: string, options: { [key: string]: unknown }) {
-          // Remove cookie from Next.js cookies() store
-          cookieStore.set({
-            name,
-            value: '',
-            ...options,
-          });
           // Remove cookie from response
           response.cookies.set({
             name,
