@@ -1,20 +1,18 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 /**
  * Sign-out button component.
  *
  * CRITICAL: This is a client component because it uses:
- * - useRouter for navigation
  * - useState for loading state
  * - onClick event handler
+ * - window.location for navigation (ensures full page reload after sign-out)
  *
  * Calls /api/auth/sign-out POST endpoint to clear session.
  */
 export function SignOutButton(): JSX.Element {
-  const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSignOut = async (): Promise<void> => {
@@ -26,15 +24,16 @@ export function SignOutButton(): JSX.Element {
       });
 
       if (response.ok) {
-        // Redirect to landing page
-        router.push('/');
-        router.refresh();
+        // Force full page reload to clear all client-side state
+        window.location.href = '/';
       } else {
         console.error('Sign-out failed');
+        alert('Sign-out failed. Please try again.');
         setLoading(false);
       }
     } catch (error) {
       console.error('Sign-out error:', error);
+      alert('Sign-out error. Please try again.');
       setLoading(false);
     }
   };
