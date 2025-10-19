@@ -147,6 +147,182 @@ RLS policies enforce data isolation at the database level, ensuring users can on
 - Verify `connection_limit=1` in DATABASE_URL
 - Check circuit breaker state: see `/lib/db/README.md`
 
+## Monitoring Infrastructure Setup (Story 1.5B)
+
+### Vercel KV (Redis) Setup
+
+Vercel KV provides distributed state management for LLM cost tracking and rate limiting.
+
+1. **Create Vercel KV Instance**
+
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard) → Storage → Create Database
+   - Select **KV (Redis)**
+   - Name: `towerofbabel-kv-production`
+   - Region: US East (same as Supabase)
+   - Click **Create** (uses free tier: 256MB storage, 10K requests/day)
+
+2. **Copy KV Credentials**
+
+   After creation, copy the credentials from the database details page:
+   - `KV_REST_API_URL`
+   - `KV_REST_API_TOKEN`
+
+3. **Add KV Credentials to Environment Variables**
+
+   **Local development:**
+   ```bash
+   # Add to .env.local
+   KV_REST_API_URL=https://[name]-[project].kv.vercel-storage.com
+   KV_REST_API_TOKEN=...
+   ```
+
+   **Vercel deployed environments:**
+   - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+   - Add both variables to all environments (Production, Preview, Development)
+
+4. **Verify KV Connection**
+
+   ```bash
+   # Start dev server
+   npm run dev
+
+   # Test KV endpoint (requires admin authentication)
+   curl http://localhost:3000/api/admin/kv-test
+
+   # Expected response:
+   {
+     "success": true,
+     "kv_status": "connected",
+     "test_key_set": true,
+     "test_key_retrieved": true,
+     "test_value": "ok"
+   }
+   ```
+
+### Sentry Error Tracking Setup
+
+Sentry provides error tracking and performance monitoring for production debugging.
+
+1. **Create Sentry Account**
+
+   Sign up at [https://sentry.io](https://sentry.io) if you haven't already.
+
+2. **Create New Project**
+
+   - Platform: **Next.js**
+   - Project name: `towerofbabel`
+   - Team: Personal (or create team)
+   - **Skip the wizard** - we have manual configuration
+
+3. **Copy Sentry DSN**
+
+   After project creation, copy the DSN from Project Settings → Client Keys (DSN)
+
+4. **Add Sentry DSN to Environment Variables**
+
+   **Local development:**
+   ```bash
+   # Add to .env.local
+   SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project]
+   NEXT_PUBLIC_SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project]
+
+   # Optional: Enable Sentry in local development (default: disabled)
+   # SENTRY_ENABLE_DEV=true
+   ```
+
+   **Vercel deployed environments:**
+   - Add `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` to all environments
+
+   **Note:** `NEXT_PUBLIC_SENTRY_DSN` should have the same value as `SENTRY_DSN`. The `NEXT_PUBLIC_` prefix makes it available in the browser. Sentry DSN is safe to expose (public DSN, Sentry validates events server-side).
+
+5. **Verify Sentry Connection**
+
+   ```bash
+   # Test Sentry endpoint (requires admin authentication)
+   curl http://localhost:3000/api/admin/sentry-test
+
+   # Expected response:
+   {
+     "success": true,
+     "sentry_status": "error_captured",
+     "message": "Test error sent to Sentry. Check Sentry dashboard."
+   }
+   ```
+
+   Then check your Sentry dashboard at [https://sentry.io](https://sentry.io) to verify the test error appears.
+
+6. **Configure Sentry Alerts**
+
+   - Go to Sentry Dashboard → Alerts
+   - Create alert rules:
+     - Alert on error rate > 5% (15 minute window)
+     - Alert on new errors
+     - Send alerts to email (or Slack integration)
+
+### Admin-Only Test Endpoints
+
+The KV and Sentry test endpoints require admin authentication:
+
+1. **Create Admin User**
+
+   ```bash
+   # Option 1: Update seed user
+   npm run db:studio
+   # In Prisma Studio, set is_admin = true for a test user
+
+   # Option 2: Run SQL in Supabase Dashboard
+   UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
+   ```
+
+2. **Sign in as Admin**
+
+   - Sign in via the authentication page with your admin user
+   - Navigate to test endpoints:
+     - KV test: `http://localhost:3000/api/admin/kv-test`
+     - Sentry test: `http://localhost:3000/api/admin/sentry-test`
+
+### Enhanced Health Check
+
+The health check endpoint now reports monitoring infrastructure status:
+
+```bash
+curl http://localhost:3000/api/health
+
+# Expected response:
+{
+  "status": "ok",
+  "timestamp": "2025-10-19T...",
+  "database": "connected",
+  "kv": "connected",
+  "sentry": "active"
+}
+```
+
+**Status Values:**
+- `database`: `"connected"` | `"disconnected"`
+- `kv`: `"connected"` | `"disconnected"`
+- `sentry`: `"active"` | `"not_configured"`
+
+**Note:** Health check always returns 200 OK even if dependencies are down. This allows monitoring to detect issues without marking entire app as unhealthy.
+
+### Troubleshooting Monitoring
+
+**KV connection fails:**
+- Verify `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set correctly
+- Check Vercel KV instance is active in Vercel Dashboard
+- Ensure variables are set for the correct environment
+
+**Sentry errors not appearing:**
+- Verify `SENTRY_DSN` is set correctly
+- Check Sentry project exists and is active
+- Enable Sentry in local dev: `SENTRY_ENABLE_DEV=true` in `.env.local`
+- Errors are disabled in local development by default (prevents noise)
+
+**Admin endpoints return 403 Forbidden:**
+- Verify your user has `is_admin = true` in the database
+- Check you're signed in with the correct account
+- See Prisma Studio: `npm run db:studio`
+
 ## Running the Development Server
 
 Start the Next.js development server:
