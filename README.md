@@ -174,6 +174,100 @@ Expected health check response:
 
 **Note:** `database` shows `"connected"` when PostgreSQL is configured and reachable (Story 1.3).
 
+## Dashboard (Story 1.5A)
+
+The authenticated user dashboard is the main workspace after signing in. It displays user account information and will host the interpretation tool in Epic 2.
+
+### Accessing the Dashboard
+
+1. **Sign in** via the authentication page (Story 1.4)
+2. Navigate to `/dashboard` or click the dashboard link after sign-in
+3. The dashboard displays:
+   - Welcome message with your name or email
+   - Current tier and message usage (Trial/Pro/PAYG)
+   - Visual progress bar showing usage percentage
+   - Interpretation form placeholder (Epic 2)
+
+### Expected Behavior
+
+**Trial User (0-10 messages used):**
+```
+Welcome to TowerOfBabel, user@example.com
+
+Trial: 3/10 messages used
+[=====>-----] (30% - green progress bar)
+
+[Interpretation tool coming soon (Epic 2)]
+```
+
+**Pro User (monthly limit):**
+```
+Welcome to TowerOfBabel, John Doe
+
+Pro: 47/100 messages used this month
+[============>---] (47% - green progress bar)
+
+[Interpretation tool coming soon (Epic 2)]
+```
+
+**Pay-as-you-go User:**
+```
+Welcome to TowerOfBabel, sarah@company.com
+
+Pay-as-you-go: 12 messages used
+(No progress bar - no message limit)
+
+[Interpretation tool coming soon (Epic 2)]
+```
+
+### Progress Bar Color Coding
+
+- **Green** (< 50% used): Plenty of messages remaining
+- **Yellow** (50-80% used): Approaching limit
+- **Red** (> 80% used): Near exhaustion
+- **Upgrade CTA** (Trial users at 8+ messages): Prompt to upgrade to Pro
+
+### Troubleshooting
+
+**Dashboard shows "Account Setup Incomplete" error:**
+- Your account exists in Supabase Auth but not in the database
+- This can happen if the webhook didn't fire during sign-up
+- **Solution:** Sign out and sign in again, or contact support
+- Database record should be created automatically on first sign-in
+
+**Dashboard doesn't show updated tier after payment:**
+- This should NOT happen if database-as-source-of-truth pattern is working correctly
+- Dashboard always queries database for tier, NOT JWT (which can be cached for 1 hour)
+- If you see stale tier information, this is a CRITICAL bug - please report it
+- **See:** `/tests/integration/payment-flow.test.ts` for the test that validates this behavior
+
+**Dashboard shows incorrect message count:**
+- Message counts are incremented after each interpretation
+- Counts reset monthly for Pro users (1st of each month)
+- Trial users have a lifetime limit (10 messages total)
+- **Verify:** Check your user record in Prisma Studio: `npm run db:studio`
+
+### Database-as-Source-of-Truth Pattern
+
+The dashboard implements a CRITICAL pattern to prevent blocking paid users:
+
+**The Problem:**
+- JWT tokens cache user metadata (tier, usage) for up to 1 hour
+- When a user pays for Pro tier, the database updates immediately
+- But the JWT remains cached with the old tier for up to 1 hour
+- If we checked the JWT, the user would be blocked despite paying
+
+**The Solution:**
+- Dashboard ALWAYS queries the database for tier and usage
+- JWT is ONLY used for authentication (user identity)
+- Database is ONLY used for authorization (tier, usage limits)
+- This ensures paid users get immediate access after upgrade
+
+**See:**
+- `/lib/auth/README.md` - Full pattern documentation
+- `/tests/integration/payment-flow.test.ts` - CRITICAL test validating this
+- `architecture/14-critical-risk-mitigation.md#risk-1` - Risk analysis
+
 ## Running Tests
 
 ### Run all tests

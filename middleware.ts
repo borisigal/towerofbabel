@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * It must be efficient and handle Supabase session cookies properly.
  *
  * Protected Routes:
- * - /dashboard/* - Requires authentication
+ * - /dashboard/* - Requires authentication (Story 1.5A dashboard page)
  *
  * Public Routes:
  * - / (landing page)
@@ -23,10 +23,12 @@ import { NextResponse, type NextRequest } from 'next/server';
  * 4. If authenticated and accessing protected route → allow access
  *
  * IMPORTANT: This middleware ONLY handles authentication (identity check).
- * Authorization (tier/usage checks) MUST be done in API routes via database query.
+ * Authorization (tier/usage checks) MUST be done in the dashboard page via database query.
+ * See app/(dashboard)/dashboard/page.tsx for database-as-source-of-truth pattern (Story 1.5A).
  *
  * @see architecture/16-coding-standards.md#api-route-structure-mandatory-order
- * @see lib/auth/README.md (Task 8)
+ * @see lib/auth/README.md
+ * @see app/(dashboard)/dashboard/page.tsx - Dashboard implementation (Story 1.5A)
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
