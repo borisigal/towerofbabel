@@ -294,9 +294,87 @@ curl http://localhost:3000/api/health
   "timestamp": "2025-10-19T...",
   "database": "connected",
   "kv": "connected",
-  "sentry": "active"
+  "sentry": "active",
+  "costCircuitBreaker": "operational"
 }
 ```
+
+## LLM Cost Protection (Story 1.5C)
+
+### 3-Layer Cost Circuit Breaker
+
+The application implements a 3-layer cost protection circuit breaker to prevent runaway LLM API costs:
+
+**Layer 1: Daily Limit ($50/day default)**
+- Prevents total daily cost overruns across all users
+- Redis key: `cost:daily:YYYY-MM-DD`
+- TTL: 24 hours (auto-resets at midnight UTC)
+- Sentry alert when > 80% ($40)
+
+**Layer 2: Hourly Limit ($5/hour default)**
+- Catches sudden cost spikes (e.g., coordinated abuse attack)
+- Redis key: `cost:hourly:YYYY-MM-DD:HH`
+- TTL: 1 hour (auto-resets every hour)
+- Sentry alert when > 80% ($4)
+
+**Layer 3: Per-User Daily Limit ($1/user/day default)**
+- Prevents individual user abuse (e.g., automated script)
+- Redis key: `cost:user:USER_ID:YYYY-MM-DD`
+- TTL: 24 hours (auto-resets at midnight UTC)
+
+### Configuring Cost Limits
+
+Cost limits are configurable via environment variables in `.env.local`:
+
+```bash
+# Daily cost limit for all users combined (USD)
+COST_LIMIT_DAILY=50
+
+# Hourly cost limit for all users combined (USD)
+COST_LIMIT_HOURLY=5
+
+# Per-user daily cost limit (USD)
+COST_LIMIT_USER_DAILY=1
+```
+
+### Monitoring Costs
+
+**Admin Cost Metrics Endpoint:**
+
+```bash
+# Test cost metrics endpoint (requires admin authentication)
+curl http://localhost:3000/api/admin/cost-metrics
+
+# Expected response:
+{
+  "success": true,
+  "daily": {
+    "current": 12.34,
+    "limit": 50,
+    "percentage": 24.68
+  },
+  "hourly": {
+    "current": 0.85,
+    "limit": 5,
+    "percentage": 17
+  },
+  "topUsers": [
+    { "userId": "user-abc", "cost": 0.75 },
+    { "userId": "user-xyz", "cost": 0.45 }
+  ]
+}
+```
+
+**Use Cases:**
+- Abuse detection: Identify users with abnormally high costs
+- Cost trending: Monitor daily/hourly cost patterns
+- Budget planning: Determine if cost limits need adjustment
+
+### Fail-Open Behavior
+
+When Redis (Vercel KV) is unavailable, the circuit breaker **fails open** (allows requests) instead of blocking users. This prioritizes user experience over temporary cost risk, as Redis downtime is rare (Upstash 99.99% uptime).
+
+**See:** `/lib/llm/README.md` for integration documentation and troubleshooting
 
 **Status Values:**
 - `database`: `"connected"` | `"disconnected"`
