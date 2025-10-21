@@ -80,10 +80,13 @@ async function main() {
       cost_usd: 0.0025,
       llm_provider: 'anthropic',
       response_time_ms: 1250,
+      tokens_input: 250,      // Input tokens (system prompt + user message)
+      tokens_output: 450,     // Output tokens (interpretation response)
+      tokens_cached: 150,     // Cached tokens (prompt caching benefit)
       timestamp: new Date(),
     },
   });
-  console.log('✅ Created sample interpretation for pro user');
+  console.log('✅ Created sample interpretation for pro user (with token tracking)');
 
   console.log('');
   console.log('🎉 Seeding completed!');
