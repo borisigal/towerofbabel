@@ -95,13 +95,18 @@ export interface InterpretationRequest {
 
 /**
  * Emotion data returned in interpretation results.
- * Includes sender/receiver emotion scores and labels.
+ * Includes sender/receiver emotion scores and explanation.
+ *
+ * @property name - Name of the emotion (e.g., "Gratitude", "Directness")
+ * @property senderScore - Emotion intensity from sender's perspective (0-10)
+ * @property receiverScore - Emotion intensity from receiver's perspective (0-10, undefined if same culture)
+ * @property explanation - Optional explanation of the emotion context
  */
 export interface Emotion {
-  emotion: string;
+  name: string;
   senderScore: number;
   receiverScore?: number;
-  label: string;
+  explanation?: string;
 }
 
 /**

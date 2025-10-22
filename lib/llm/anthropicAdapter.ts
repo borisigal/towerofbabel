@@ -211,7 +211,7 @@ export class AnthropicAdapter implements LLMAdapter {
     this.client = new Anthropic({ apiKey });
     this.model =
       process.env.LLM_MODEL || 'claude-sonnet-4-5-20250929';
-    // Use 30 seconds for integration tests, 10 seconds for production
+    // Default timeout: 30 seconds (configurable via LLM_TIMEOUT_MS env var)
     this.timeout = parseInt(process.env.LLM_TIMEOUT_MS || '30000', 10);
   }
 

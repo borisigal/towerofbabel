@@ -28,6 +28,9 @@ export class LLMError extends Error {
  * Indicates network latency or provider slowdown.
  */
 export class LLMTimeoutError extends LLMError {
+  /**
+   * Creates a timeout error.
+   */
   constructor() {
     super('LLM request timed out after 10 seconds');
     this.name = 'LLMTimeoutError';
@@ -55,6 +58,9 @@ export class LLMRateLimitError extends LLMError {
  * Indicates invalid, expired, or missing API key.
  */
 export class LLMAuthError extends LLMError {
+  /**
+   * Creates an authentication error.
+   */
   constructor() {
     super('Invalid LLM API key');
     this.name = 'LLMAuthError';

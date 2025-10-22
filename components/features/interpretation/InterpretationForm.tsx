@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +14,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { CultureSelector } from './CultureSelector';
-import { type CultureCode } from '@/lib/types/models';
+import { InterpretationResult } from './InterpretationResult';
+import { type CultureCode, type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
 
 /**
  * Form data structure for interpretation request.
@@ -36,12 +38,19 @@ interface InterpretationFormData {
  * - Loading state during submission
  * - Fully responsive design (mobile, tablet, desktop)
  * - WCAG 2.1 AA accessible (keyboard navigation, screen reader support)
+ * - Integrated with /api/interpret endpoint (Story 2.3)
+ * - Displays results via alert (temporary until Story 2.4)
  *
- * Story 2.1: UI only, console.log submission
- * Story 2.3: Will integrate with /api/interpret endpoint
+ * Story 2.1: UI created
+ * Story 2.3: Integrated with API endpoint
+ * Story 2.4: Will add proper result display UI
  */
 export function InterpretationForm(): JSX.Element {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<InterpretationResultType | null>(null);
+  const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -75,31 +84,17 @@ export function InterpretationForm(): JSX.Element {
 
   /**
    * Form submission handler.
-   * TODO: Story 2.3 - Replace console.log with API call to /api/interpret
+   * Calls /api/interpret endpoint with form data.
    */
   const onSubmit = async (data: InterpretationFormData): Promise<void> => {
     if (!isFormValid) return;
 
+    // Clear previous results/errors
+    setResult(null);
+    setError(null);
     setIsLoading(true);
 
     try {
-      // TODO: Story 2.3 - Call /api/interpret endpoint
-      // const response = await fetch('/api/interpret', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     message: data.message,
-      //     sender_culture: data.sender_culture,
-      //     receiver_culture: data.receiver_culture,
-      //     mode: 'inbound',
-      //   }),
-      // });
-      //
-      // const result = await response.json();
-      // if (result.success) {
-      //   // Story 2.4 will handle result display
-      // }
-
       console.log('Submitting interpretation request:', {
         message: data.message,
         sender_culture: data.sender_culture,
@@ -107,13 +102,46 @@ export function InterpretationForm(): JSX.Element {
         mode: 'inbound',
       });
 
-      // Simulate API call delay for testing loading state
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch('/api/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: data.message,
+          sender_culture: data.sender_culture,
+          receiver_culture: data.receiver_culture,
+          mode: 'inbound',
+        }),
+      });
 
-      console.log('Interpretation request completed (simulated)');
+      const responseData = await response.json();
+
+      if (responseData.success) {
+        console.log('Interpretation successful:', responseData.data);
+        console.log('Messages remaining:', responseData.metadata?.messages_remaining);
+
+        // Store result for display
+        setResult(responseData.data.interpretation);
+        setMessagesRemaining(responseData.metadata?.messages_remaining);
+
+        // Refresh the page to update usage counter (server component)
+        router.refresh();
+
+        // Scroll to results
+        setTimeout(() => {
+          const resultsElement = document.getElementById('interpretation-results');
+          if (resultsElement) {
+            resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      } else {
+        console.error('Interpretation failed:', responseData.error);
+        setError(
+          responseData.error?.message || 'Interpretation failed. Please try again.'
+        );
+      }
     } catch (error) {
-      console.error('Interpretation failed:', error);
-      // Story 2.4 will handle error display
+      console.error('Interpretation request failed:', error);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -250,6 +278,25 @@ export function InterpretationForm(): JSX.Element {
           </div>
         </form>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-900 dark:text-red-100 font-medium">
+            {error}
+          </p>
+        </div>
+      )}
+
+      {/* Results Display */}
+      {result && (
+        <div id="interpretation-results" className="mt-6">
+          <InterpretationResult
+            result={result}
+            messagesRemaining={messagesRemaining}
+          />
+        </div>
+      )}
     </div>
   );
 }
