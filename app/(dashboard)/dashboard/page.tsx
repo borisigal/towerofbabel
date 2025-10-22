@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { DashboardHeader } from '@/components/features/dashboard/DashboardHeader';
 import { UsageDisplay } from '@/components/features/dashboard/UsageDisplay';
-import { InterpretationPlaceholder } from '@/components/features/dashboard/InterpretationPlaceholder';
+import { InterpretationForm } from '@/components/features/interpretation/InterpretationForm';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 
 /**
@@ -85,15 +85,15 @@ async function DashboardContent(): Promise<JSX.Element> {
       {/* Welcome Header */}
       <DashboardHeader name={userRecord.name} email={userRecord.email} />
 
+      {/* Interpretation Form - Story 2.1 */}
+      <InterpretationForm />
+
       {/* Usage Display */}
       <UsageDisplay
         tier={userRecord.tier as 'trial' | 'payg' | 'pro'}
         messagesUsedCount={userRecord.messages_used_count}
         messagesLimit={messagesLimit}
       />
-
-      {/* Interpretation Form Placeholder */}
-      <InterpretationPlaceholder />
     </div>
   );
 }

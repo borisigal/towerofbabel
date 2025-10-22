@@ -68,10 +68,11 @@ export function UsageDisplay({
   const showUpgradeCTA = tier === 'trial' && messagesUsedCount >= 8;
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-        {getUsageLabel()}
-      </h2>
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="bg-card shadow rounded-lg p-6 border border-border">
+        <h2 className="text-lg font-semibold mb-4 text-foreground">
+          {getUsageLabel()}
+        </h2>
 
       {/* Progress bar (only for tiers with limits) */}
       {messagesLimit && (
@@ -107,6 +108,7 @@ export function UsageDisplay({
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

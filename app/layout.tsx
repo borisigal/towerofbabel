@@ -23,13 +23,13 @@ export default async function RootLayout({ children }: { children: ReactNode }):
   } = await supabase.auth.getUser();
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>
         {/* Navigation bar with conditional sign-out button */}
-        <nav className="border-b p-4 bg-white dark:bg-gray-800">
+        <nav className="border-b p-4 bg-background">
           <div className="container mx-auto">
             <div className="flex items-center justify-between">
-              <div className="text-xl font-bold">TowerOfBabel</div>
+              <div className="text-xl font-bold text-foreground">TowerOfBabel</div>
               <div className="flex items-center gap-4">
                 {user && <SignOutButton />}
               </div>
