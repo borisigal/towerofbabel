@@ -6,6 +6,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    environmentMatchGlobs: [
+      // Use node environment for integration tests (not jsdom)
+      ['tests/integration/**', 'node'],
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
