@@ -27,9 +27,10 @@ model User {
   email                     String          @unique
   name                      String?
   created_at                DateTime        @default(now())
+  trial_start_date          DateTime        @default(now()) // For trial expiration check (14 days)
   tier                      String          @default("trial") // "trial" | "payg" | "pro"
   messages_used_count       Int             @default(0)
-  messages_reset_date       DateTime        @default(now())
+  messages_reset_date       DateTime?       // Next reset date for Pro users (NULL for trial/PAYG)
   lemonsqueezy_customer_id  String?         @unique
   is_admin                  Boolean         @default(false)
 

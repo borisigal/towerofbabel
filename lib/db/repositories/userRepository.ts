@@ -50,6 +50,7 @@ export async function findUserById(userId: string) {
         tier: true,
         messages_used_count: true,
         messages_reset_date: true,
+        trial_start_date: true,
         is_admin: true,
         created_at: true,
       },
@@ -113,7 +114,7 @@ export async function createUser(data: {
         name: data.name,
         tier: 'trial',
         messages_used_count: 0,
-        messages_reset_date: new Date(),
+        messages_reset_date: null, // Trial users never reset (AC#7)
       },
       select: {
         id: true,
@@ -197,6 +198,60 @@ export async function resetUserUsage(userId: string) {
       },
       select: {
         id: true,
+        messages_used_count: true,
+        messages_reset_date: true,
+      },
+    })
+  );
+}
+
+/**
+ * Resets Pro user message count and updates reset date to next month.
+ *
+ * This function implements automatic monthly usage reset for Pro tier users.
+ * Resets messages_used_count to 0 and sets messages_reset_date to 30 days from now.
+ *
+ * CRITICAL: Only called for Pro tier users who have reached their reset date.
+ * This function is called automatically during usage checks AND by the daily cron job.
+ *
+ * @param userId - User UUID
+ * @returns Updated user record with reset usage count and new reset date
+ *
+ * @example
+ * ```typescript
+ * // Check if reset needed
+ * if (user.tier === 'pro' && Date.now() > user.messages_reset_date.getTime()) {
+ *   await resetProUserUsage(user.id);
+ * }
+ * ```
+ *
+ * @see architecture/16-coding-standards.md#jsdoc-for-public-apis
+ */
+export async function resetProUserUsage(userId: string) {
+  const logger = (await import('@/lib/observability/logger')).logger;
+
+  // Calculate next reset date (30 days from now)
+  const nextResetDate = new Date();
+  nextResetDate.setDate(nextResetDate.getDate() + 30);
+
+  logger.info(
+    {
+      userId,
+      nextResetDate: nextResetDate.toISOString(),
+    },
+    'Resetting Pro user usage'
+  );
+
+  return executeWithCircuitBreaker(() =>
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        messages_used_count: 0,
+        messages_reset_date: nextResetDate,
+      },
+      select: {
+        id: true,
+        tier: true,
         messages_used_count: true,
         messages_reset_date: true,
       },

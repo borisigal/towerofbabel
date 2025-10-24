@@ -1,6 +1,6 @@
 # Epic 3: Usage Tracking & Pricing Tiers
 
-**Expanded Goal:** Build complete usage tracking system, enforce pricing tier limits (trial: 10 messages/14 days, pay-as-you-go: $0.50/message, Pro: TBD messages/month), integrate Lemon Squeezy for subscription and metered billing, display usage indicators in UI, and implement limit notification and upgrade modals to enable monetization and validate unit economics.
+**Expanded Goal:** Build complete usage tracking system, enforce pricing tier limits (trial: 10 messages/14 days, pay-as-you-go: $0.50/message billed monthly, Pro: TBD messages/month), integrate Lemon Squeezy for subscription and usage-based metered billing, display usage indicators in UI, and implement limit notification and upgrade modals to enable monetization and validate unit economics.
 
 ---
 
@@ -58,43 +58,49 @@
 1. Upgrade modal triggered when limit exceeded (displayed automatically on interpretation attempt)
 2. Modal displays three pricing options:
    - **Free Trial:** "14 days, 10 messages (expired or used up)"
-   - **Pay-As-You-Go:** "$0.50 per interpretation" with "Buy 1 Interpretation" CTA button
+   - **Pay-As-You-Go:** "$0.50 per interpretation, billed monthly" with "Start Pay-As-You-Go" CTA button
    - **Pro:** "$10/month for [TBD] messages" with "Subscribe to Pro" CTA button (primary recommendation)
 3. Modal includes brief value proposition: "Continue interpreting cross-cultural messages with unlimited confidence"
 4. "Subscribe to Pro" button redirects to Lemon Squeezy Checkout (Story 3.4)
-5. "Buy 1 Interpretation" button redirects to Lemon Squeezy payment link for one-time $0.50 charge
+5. "Start Pay-As-You-Go" button creates PAYG usage-based subscription via Lemon Squeezy (Story 3.4)
 6. Modal dismissible with "Maybe later" or close button (but user still can't interpret until upgraded)
 7. Modal also accessible from navigation menu ("Upgrade" link) for proactive upgrades
 8. Modal responsive (readable on mobile, tablet, desktop)
 9. Copy emphasizes speed and accuracy value prop vs. free ChatGPT
 10. TBD message limit shown as placeholder "[X]" until Week 1 benchmarking determines value
+11. PAYG description clarifies: "Use as much as you need, pay only for what you use at month-end"
 
 ---
 
-## Story 3.4: Integrate Lemon Squeezy for Subscriptions and Pay-As-You-Go
+## Story 3.4: Integrate Lemon Squeezy for Subscriptions and Metered Billing
 
 **As a** user,
-**I want** to subscribe to Pro tier or pay per interpretation,
+**I want** to subscribe to Pro tier or pay-per-use with monthly billing,
 **so that** I can continue using TowerOfBabel after my trial ends.
 
 ### Acceptance Criteria
 
 1. Lemon Squeezy account created and configured (test mode and production mode)
 2. Lemon Squeezy Product created for Pro tier: "$10/month recurring subscription"
-3. Lemon Squeezy Variant created for pay-as-you-go: "$0.50 per interpretation" (one-time purchase)
+3. Lemon Squeezy Usage-Based Subscription created for PAYG tier: "$0/month base + $0.50 per interpretation metered"
 4. Lemon Squeezy Checkout session created when user clicks "Subscribe to Pro"
 5. Checkout session redirects to Lemon Squeezy hosted page, then back to success URL after payment
-6. Lemon Squeezy payment link created for one-time $0.50 interpretation purchase
-7. Webhook endpoint created at /api/webhooks/lemonsqueezy to handle events:
-   - `order_created`: Create/update subscription in database
-   - `subscription_payment_success`: Reset usage counter for Pro users
-   - `subscription_cancelled`: Downgrade user to pay-as-you-go tier
-8. User's lemonsqueezy_customer_id stored in database on first payment
-9. Subscription record created/updated with lemonsqueezy_subscription_id, status, current_period_end
-10. Successful payment updates user tier to "pro" and resets messages_used_count to 0
-11. Webhook signature verification implemented (prevent fraudulent requests)
-12. Lemon Squeezy integration tested in test mode with test cards
-13. Error handling for failed payments displays user-friendly message
+6. PAYG subscription created via API when user clicks "Start Pay-As-You-Go" (no upfront payment required)
+7. Usage tracking implemented: After each interpretation, report usage to Lemon Squeezy API via `reportUsage()`
+8. Webhook endpoint created at /api/webhooks/lemonsqueezy to handle events:
+   - `subscription_created`: Create subscription in database, update user tier
+   - `subscription_payment_success`: Reset usage counter for Pro users (monthly billing cycle)
+   - `subscription_cancelled`: Downgrade user to trial tier (blocked until reactivation)
+   - `usage_updated`: Log usage event for audit trail (optional)
+9. User's lemonsqueezy_customer_id stored in database on first payment/subscription
+10. Subscription record created/updated with lemonsqueezy_subscription_id, status, current_period_end
+11. Successful Pro payment updates user tier to "pro" and resets messages_used_count to 0
+12. PAYG subscription activation updates user tier to "payg" (no limit enforcement, usage tracked)
+13. Webhook signature verification implemented (prevent fraudulent requests)
+14. Lemon Squeezy integration tested in test mode with test cards
+15. Error handling for failed payments displays user-friendly message
+16. Monthly invoice generated by Lemon Squeezy for PAYG users: (interpretations_count × $0.50)
+17. Usage tracking idempotent (duplicate reportUsage() calls don't double-charge)
 
 ---
 

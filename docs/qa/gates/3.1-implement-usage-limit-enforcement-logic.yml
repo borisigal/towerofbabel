@@ -1,0 +1,278 @@
+schema: 1
+story: '3.1'
+story_title: 'Implement Usage Limit Enforcement Logic'
+gate: PASS
+status_reason: 'Excellent implementation quality with all 10 ACs met, all 20 tests passing (100% success rate), production build successful, and perfect adherence to critical architectural patterns (database-as-source-of-truth, circuit breaker). Trial expiration (14 days) and Pro tier monthly reset logic implemented with comprehensive error responses and Vercel cron backup.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-10-23T10:30:00.000Z'
+
+top_issues: []
+
+waiver:
+  active: false
+
+quality_score: 100
+expires: '2025-11-06T23:59:59.000Z'
+
+evidence:
+  tests_reviewed: 20
+  tests_passing: 20
+  tests_failing: 0
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Excellent security implementation: Vercel cron authorization with CRON_SECRET validation, database-as-source-of-truth pattern enforced (no JWT tier checks), no sensitive data in logs, proper circuit breaker protection'
+  performance:
+    status: PASS
+    notes: 'Efficient implementation: Trial expiration check is O(1) calculation, Pro reset is on-demand (no manual intervention), cron runs daily at off-peak time (midnight UTC), database queries use explicit select clauses, circuit breaker prevents connection exhaustion'
+  reliability:
+    status: PASS
+    notes: 'Comprehensive error handling: Cron job has error collection and logging, automatic Pro reset happens on-demand (cron is backup), all 20 tests passing (100% success rate), circuit breaker wraps all database operations, failed resets logged but do not crash cron job'
+  maintainability:
+    status: PASS
+    notes: 'Excellent documentation: Comprehensive JSDoc on all functions with examples, clear comments explaining trial expiration and Pro reset logic, environment variable configuration for flexibility (TRIAL_DAYS_LIMIT, PRO_MESSAGE_LIMIT, CRON_SECRET), well-structured test suite (unit + integration)'
+
+requirements_traceability:
+  AC1_trial_expiration:
+    status: PASS
+    evidence: 'usageService.ts lines 94-111: checkTrialExpired() calculates days elapsed from trial_start_date, blocks if > 14 days. Lines 184-209: Trial expiration checked BEFORE message limit (time-based takes precedence)'
+    tests: 'usageService-trial-expiration.test.ts: 6 tests covering all scenarios (5 days old allowed, 14 days allowed, 15 days blocked, message limit, expiration priority)'
+
+  AC2_pro_tier_enforcement:
+    status: PASS
+    evidence: 'usageService.ts lines 242-294: Pro users blocked when messages_used_count >= PRO_MESSAGE_LIMIT (configurable via env, default 100)'
+    tests: 'usageService-pro-reset.test.ts: 6 tests covering Pro reset logic and limit enforcement'
+
+  AC3_payg_no_limit:
+    status: PASS
+    evidence: 'usageService.ts lines 174-180: PAYG users always allowed with messagesRemaining: undefined'
+    tests: 'usageService.test.ts (Story 2.3): PAYG user always allowed test'
+
+  AC4_api_route_checks:
+    status: PASS
+    evidence: 'app/api/interpret/route.ts calls checkUsageLimit() which performs all tier and limit checks before processing LLM call'
+    tests: 'interpret.test.ts: Enhanced error response tests verify limit checking occurs before LLM calls'
+
+  AC5_limit_exceeded_errors:
+    status: PASS
+    evidence: 'usageService.ts returns detailed error responses: TRIAL_EXPIRED (lines 200-208), LIMIT_EXCEEDED for trial (lines 225-233), LIMIT_EXCEEDED for Pro (lines 284-293). All include tier, usage details, and tier-specific information (days_elapsed, reset_date)'
+    tests: 'interpret.test.ts: 3 new tests added verifying enhanced error response format'
+
+  AC6_pro_reset_logic:
+    status: PASS
+    evidence: 'usageService.ts lines 244-267: Automatic on-demand reset when Date.now() > messages_reset_date. userRepository.ts lines 230-260: resetProUserUsage() sets messages_used_count = 0, updates messages_reset_date to +30 days'
+    tests: 'usageService-pro-reset.test.ts: Tests verify reset logic, date updates, and tier-specific behavior'
+
+  AC7_trial_no_reset:
+    status: PASS
+    evidence: 'usageService.ts lines 182-240: Trial users have no reset logic (only PAYG and Pro tiers handled). checkTrialExpired() blocks after 14 days regardless of usage'
+    tests: 'usageService-trial-expiration.test.ts: Tests confirm trial expiration is final (no reset)'
+
+  AC8_messages_reset_date_field:
+    status: PASS
+    evidence: 'prisma/schema.prisma line 33: messages_reset_date DateTime? field added (nullable for trial/PAYG). Migration created successfully'
+    tests: 'Database schema verified, tests pass with new field'
+
+  AC9_background_job:
+    status: PASS
+    evidence: 'app/api/cron/reset-usage/route.ts: Daily cron job at midnight UTC. vercel.json: Cron configuration "0 0 * * *". Queries Pro users where messages_reset_date <= now(), calls resetProUserUsage() for each'
+    tests: 'reset-usage.test.ts: 8 tests covering cron authorization, reset logic, error handling, audit logging'
+
+  AC10_unit_tests:
+    status: PASS
+    evidence: '20 tests total: 6 trial expiration tests, 6 Pro reset tests, 8 cron job tests'
+    tests: 'All 20 tests passing (100% success rate). Coverage exceeds 80% for service layer.'
+
+test_architecture_assessment:
+  unit_tests:
+    coverage: 'Excellent (12 unit tests: 6 trial expiration + 6 Pro reset)'
+    quality: 'High - comprehensive edge cases, proper date mocking, clear test names'
+    completeness: 'All logic paths tested (trial expiration, message limits, Pro resets, tier-specific behavior)'
+
+  integration_tests:
+    coverage: '8 cron job integration tests'
+    quality: 'High - tests authorization, reset logic, error handling, audit logging'
+    execution: 'All 8 tests passing, validates end-to-end cron workflow'
+
+  test_data:
+    management: 'Good - date mocking for time-based logic, realistic user scenarios'
+    coverage: 'Comprehensive - covers all user tiers, edge cases (14 vs 15 days), error scenarios'
+
+code_quality_assessment:
+  strengths:
+    - 'Excellent JSDoc documentation with usage examples on all public functions'
+    - 'Perfect adherence to database-as-source-of-truth pattern (queries DB for trial_start_date, messages_reset_date)'
+    - 'Circuit breaker pattern used on all database operations (resetProUserUsage wrapped)'
+    - 'Environment variable configuration for flexibility (TRIAL_DAYS_LIMIT, PRO_MESSAGE_LIMIT, CRON_SECRET)'
+    - 'Automatic on-demand Pro reset (no manual intervention required)'
+    - 'Comprehensive error responses with tier-specific details (days_elapsed, reset_date)'
+    - 'Fail-safe design: Cron job logs errors but continues processing other users'
+    - 'Audit logging throughout: Trial expiration, Pro resets, cron job execution'
+    - 'Clear separation of concerns: usageService (business logic), userRepository (data access), cron endpoint (scheduled job)'
+    - 'Defensive programming: Unknown tier throws error instead of allowing'
+
+  issues: []
+
+  refactoring_performed: []
+
+  technical_debt: 'None identified'
+
+standards_compliance:
+  coding_standards:
+    status: PASS
+    details:
+      - 'TypeScript strict mode: ✓ Enabled'
+      - 'Explicit return types: ✓ All functions properly typed'
+      - 'No any types: ✓ Perfect compliance'
+      - 'Interface usage: ✓ UsageCheckResult, TrialExpirationCheck interfaces'
+      - 'JSDoc documentation: ✓ Comprehensive documentation with examples'
+      - 'Circuit breaker: ✓ Used on resetProUserUsage database operation'
+      - 'Structured logging: ✓ Pino logger with context objects throughout'
+
+  project_structure:
+    status: PASS
+    details:
+      - 'Service layer: ✓ lib/services/usageService.ts enhanced'
+      - 'Repository layer: ✓ lib/db/repositories/userRepository.ts enhanced'
+      - 'Cron endpoint: ✓ app/api/cron/reset-usage/route.ts created'
+      - 'Database migration: ✓ prisma/schema.prisma updated (trial_start_date, messages_reset_date)'
+      - 'Vercel config: ✓ vercel.json created with cron configuration'
+      - 'Tests: ✓ tests/unit/ and tests/integration/ properly organized'
+
+  testing_strategy:
+    status: PASS
+    details:
+      - 'Unit tests: ✓ 12 tests for service layer logic'
+      - 'Integration tests: ✓ 8 tests for cron job endpoint'
+      - 'Date mocking: ✓ Used for time-based logic testing'
+      - 'Coverage: ✓ Exceeds 80% for new code'
+
+integration_readiness:
+  story_3_2_preparation:
+    status: READY
+    notes: 'Enhanced error responses provide usage details needed for UI display. messagesRemaining, daysElapsed, trialEndDate, resetDate all available for usage indicator (Story 3.2).'
+
+  dependencies_verified:
+    - 'Story 2.3 usageService: ✓ Enhanced with trial expiration and Pro reset logic'
+    - 'Story 2.3 API route: ✓ Enhanced error responses with usage details'
+    - 'Prisma schema: ✓ Updated with trial_start_date and messages_reset_date fields'
+    - 'Vercel cron: ✓ Configured and ready for deployment'
+    - 'Pino logger: ✓ Used throughout for audit trail'
+
+recommendations:
+  immediate: []
+
+  future:
+    - action: 'Consider adding Lemon Squeezy subscription webhook to sync messages_reset_date'
+      refs: ['app/api/cron/reset-usage/route.ts', 'lib/db/repositories/userRepository.ts']
+      priority: 'MEDIUM'
+      notes: 'Story 3.4 will implement Lemon Squeezy webhooks. Consider syncing messages_reset_date from subscription.current_period_end instead of calculating +30 days. Would align reset dates with actual billing cycles.'
+
+    - action: 'Monitor cron job execution logs in production'
+      refs: ['app/api/cron/reset-usage/route.ts']
+      priority: 'LOW'
+      notes: 'Add Vercel logging integration or Sentry monitoring to track cron job success/failure rates in production.'
+
+risk_assessment:
+  review_depth: DEEP
+  risk_level: LOW
+  risk_factors:
+    - factor: 'Time-based logic (trial expiration)'
+      mitigation: 'Comprehensive date mocking in tests, clear expiration calculation, edge case testing (14 vs 15 days)'
+      residual_risk: LOW
+
+    - factor: 'Automatic Pro reset (data modification)'
+      mitigation: 'On-demand reset with audit logging, cron job as backup, circuit breaker protection, error handling prevents cascade failures'
+      residual_risk: LOW
+
+    - factor: 'Vercel cron security (unauthorized access)'
+      mitigation: 'CRON_SECRET authorization check, returns 401 if invalid, logs unauthorized attempts'
+      residual_risk: LOW
+
+    - factor: 'Database-as-source-of-truth pattern maintained'
+      mitigation: 'All tier/usage checks query database (no JWT usage), consistent with Story 2.3 pattern'
+      residual_risk: NONE
+
+additional_notes: |
+  This is an excellent implementation that enhances the usage limit system with trial expiration and Pro tier monthly resets. The code demonstrates:
+
+  1. **Perfect Pattern Compliance:** Database-as-source-of-truth pattern strictly enforced (queries trial_start_date and messages_reset_date from DB, NOT JWT)
+
+  2. **Excellent Architecture:**
+     - On-demand Pro reset (seamless user experience)
+     - Cron job as backup (catches missed resets)
+     - Fail-safe design (cron errors logged but don't crash job)
+     - Circuit breaker on all database operations
+
+  3. **Comprehensive Error Responses:**
+     - TRIAL_EXPIRED: Includes days_elapsed, trial_end_date
+     - LIMIT_EXCEEDED (trial): Includes messages_used, messages_limit
+     - LIMIT_EXCEEDED (pro): Includes messages_used, messages_limit, reset_date
+     - Enables rich UI feedback for Story 3.2
+
+  4. **Flexible Configuration:**
+     - TRIAL_DAYS_LIMIT env var (default 14)
+     - PRO_MESSAGE_LIMIT env var (default 100)
+     - CRON_SECRET for authorization
+     - Easy to adjust without code changes
+
+  5. **Production-Ready:**
+     - All 20 tests passing (100% success rate)
+     - Production build successful (0 errors)
+     - Comprehensive audit logging
+     - Vercel cron configured correctly
+
+  **Integration Test Results:**
+  - Cron job authorization: ✓ 401 returned for invalid secret
+  - Pro user reset: ✓ messages_used_count = 0, messages_reset_date updated
+  - Multiple users: ✓ Resets all eligible users
+  - Error handling: ✓ Failed resets logged but job continues
+  - Audit trail: ✓ All resets logged with user details
+
+  **Trial Expiration Logic:**
+  - Checked BEFORE message limit (time-based takes precedence)
+  - Clear error messaging with days_elapsed
+  - Edge case handling (14 days = allowed, 15 days = blocked)
+
+  **Pro Reset Logic:**
+  - Automatic on-demand during interpretation request
+  - Cron job backup at midnight UTC daily
+  - Next reset_date calculated as +30 days
+  - Will integrate with Lemon Squeezy subscription data in Story 3.4
+
+  This story is production-ready and ready to merge.
+
+verification_checklist:
+  - item: 'All 10 acceptance criteria met'
+    status: VERIFIED
+  - item: 'All 20 tests passing (100% success rate)'
+    status: VERIFIED
+  - item: 'TypeScript compilation clean (no errors)'
+    status: VERIFIED
+  - item: 'Production build successful'
+    status: VERIFIED
+  - item: 'Database migration applied (trial_start_date, messages_reset_date)'
+    status: VERIFIED
+  - item: 'Trial expiration logic implemented (14 days)'
+    status: VERIFIED
+  - item: 'Pro reset logic implemented (automatic + cron backup)'
+    status: VERIFIED
+  - item: 'Enhanced error responses with usage details'
+    status: VERIFIED
+  - item: 'Vercel cron configured correctly'
+    status: VERIFIED
+  - item: 'Circuit breaker pattern used'
+    status: VERIFIED
+  - item: 'Database-as-source-of-truth pattern maintained'
+    status: VERIFIED
+  - item: 'Environment variables configured'
+    status: VERIFIED
+  - item: 'Comprehensive audit logging'
+    status: VERIFIED
+  - item: 'No technical debt introduced'
+    status: VERIFIED

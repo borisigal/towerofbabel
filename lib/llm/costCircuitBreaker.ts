@@ -81,9 +81,10 @@ export async function checkCostBudget(
   userId: string
 ): Promise<CostCheckResult> {
   try {
-    // Generate date/time keys for Redis lookups
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const currentHour = new Date().getHours().toString().padStart(2, '0'); // HH
+    // Generate date/time keys for Redis lookups (UTC for consistency)
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    const currentHour = now.getUTCHours().toString().padStart(2, '0'); // HH in UTC
 
     // LAYER 1: Daily Limit Check ($50/day default)
     const dailyCostKey = `cost:daily:${today}`;
@@ -260,9 +261,10 @@ export async function trackCost(
   costUsd: number
 ): Promise<void> {
   try {
-    // Generate date/time keys (same format as checkCostBudget)
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const currentHour = new Date().getHours().toString().padStart(2, '0'); // HH
+    // Generate date/time keys (same format as checkCostBudget, UTC for consistency)
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    const currentHour = now.getUTCHours().toString().padStart(2, '0'); // HH in UTC
 
     // Increment daily cost with 24-hour TTL
     const dailyCostKey = `cost:daily:${today}`;

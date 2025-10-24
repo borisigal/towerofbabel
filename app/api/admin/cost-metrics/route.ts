@@ -64,8 +64,10 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
   // 3. COST METRICS LOGIC
   try {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const currentHour = new Date().getHours().toString().padStart(2, '0'); // HH
+    // Use UTC for consistency with cost circuit breaker
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    const currentHour = now.getUTCHours().toString().padStart(2, '0'); // HH in UTC
 
     // Fetch current daily cost
     const dailyCost = parseFloat(

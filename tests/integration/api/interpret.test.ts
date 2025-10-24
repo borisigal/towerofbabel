@@ -540,4 +540,125 @@ describe('/api/interpret - Integration Tests', () => {
       expect(body.error.code).toBe('LLM_RATE_LIMITED');
     });
   });
+
+  describe('Enhanced Error Responses - Story 3.1', () => {
+    beforeEach(() => {
+      // Mock successful auth and rate limit
+      const mockUser = { id: 'user-123', email: 'test@example.com' };
+      const mockSupabaseClient = {
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: mockUser },
+            error: null,
+          }),
+        },
+      };
+
+      vi.mocked(createClient).mockReturnValue(
+        mockSupabaseClient as ReturnType<typeof createClient>
+      );
+
+      vi.mocked(checkRateLimit).mockResolvedValue({
+        allowed: true,
+        limit: 50,
+        remaining: 45,
+        reset: Date.now() / 1000 + 3600,
+      });
+    });
+
+    it('should return 403 with LIMIT_EXCEEDED and usage details for trial user at message limit', async () => {
+      // Mock trial user at 10 message limit
+      vi.mocked(checkUsageLimit).mockResolvedValue({
+        allowed: false,
+        messagesRemaining: 0,
+        error: 'LIMIT_EXCEEDED',
+        message: 'Trial limit reached (10 messages)',
+        tier: 'trial',
+        messagesUsed: 10,
+        messagesLimit: 10,
+      });
+
+      const request = createMockRequest({
+        message: 'Test message',
+        sender_culture: 'american',
+        receiver_culture: 'japanese',
+        mode: 'inbound',
+      });
+
+      const response = await POST(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('LIMIT_EXCEEDED');
+      expect(body.error.message).toContain('Trial limit reached (10 messages)');
+      expect(body.error.tier).toBe('trial');
+      expect(body.error.messages_used).toBe(10);
+      expect(body.error.messages_limit).toBe(10);
+    });
+
+    it('should return 403 with TRIAL_EXPIRED and days elapsed for expired trial user', async () => {
+      // Mock trial user expired (15 days)
+      vi.mocked(checkUsageLimit).mockResolvedValue({
+        allowed: false,
+        messagesRemaining: 0,
+        error: 'TRIAL_EXPIRED',
+        message: 'Trial period expired (14 days)',
+        tier: 'trial',
+        daysElapsed: 15,
+        trialEndDate: '2025-11-05T00:00:00Z',
+      });
+
+      const request = createMockRequest({
+        message: 'Test message',
+        sender_culture: 'american',
+        receiver_culture: 'japanese',
+        mode: 'inbound',
+      });
+
+      const response = await POST(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('TRIAL_EXPIRED');
+      expect(body.error.message).toContain('Trial period expired');
+      expect(body.error.tier).toBe('trial');
+      expect(body.error.days_elapsed).toBe(15);
+      expect(body.error.trial_end_date).toBe('2025-11-05T00:00:00Z');
+    });
+
+    it('should return 403 with LIMIT_EXCEEDED and reset_date for Pro user at limit', async () => {
+      // Mock Pro user at monthly limit
+      vi.mocked(checkUsageLimit).mockResolvedValue({
+        allowed: false,
+        messagesRemaining: 0,
+        error: 'LIMIT_EXCEEDED',
+        message: 'Monthly limit reached (100 messages)',
+        tier: 'pro',
+        messagesUsed: 100,
+        messagesLimit: 100,
+        resetDate: '2025-11-01T00:00:00Z',
+      });
+
+      const request = createMockRequest({
+        message: 'Test message',
+        sender_culture: 'american',
+        receiver_culture: 'japanese',
+        mode: 'inbound',
+      });
+
+      const response = await POST(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('LIMIT_EXCEEDED');
+      expect(body.error.message).toContain('Monthly limit reached (100 messages)');
+      expect(body.error.tier).toBe('pro');
+      expect(body.error.messages_used).toBe(100);
+      expect(body.error.messages_limit).toBe(100);
+      expect(body.error.reset_date).toBe('2025-11-01T00:00:00Z');
+    });
+  });
 });

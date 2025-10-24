@@ -273,17 +273,55 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           user_id: user.id,
           error: usageCheck.error,
           messages_remaining: usageCheck.messagesRemaining,
+          tier: usageCheck.tier,
         },
         'Usage limit exceeded'
       );
 
+      // Build enhanced error response with usage details
+      const errorResponse: {
+        code: string;
+        message: string;
+        tier?: string;
+        messages_used?: number;
+        messages_limit?: number;
+        days_elapsed?: number;
+        trial_end_date?: string;
+        reset_date?: string;
+      } = {
+        code: usageCheck.error || 'LIMIT_EXCEEDED',
+        message: usageCheck.message || 'Usage limit exceeded',
+      };
+
+      // Add tier-specific details to error response
+      if (usageCheck.tier) {
+        errorResponse.tier = usageCheck.tier;
+      }
+
+      if (usageCheck.messagesUsed !== undefined) {
+        errorResponse.messages_used = usageCheck.messagesUsed;
+      }
+
+      if (usageCheck.messagesLimit !== undefined) {
+        errorResponse.messages_limit = usageCheck.messagesLimit;
+      }
+
+      if (usageCheck.daysElapsed !== undefined) {
+        errorResponse.days_elapsed = usageCheck.daysElapsed;
+      }
+
+      if (usageCheck.trialEndDate) {
+        errorResponse.trial_end_date = usageCheck.trialEndDate;
+      }
+
+      if (usageCheck.resetDate) {
+        errorResponse.reset_date = usageCheck.resetDate;
+      }
+
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: usageCheck.error,
-            message: usageCheck.message,
-          },
+          error: errorResponse,
         },
         { status: 403 }
       );
