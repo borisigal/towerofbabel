@@ -1,7 +1,6 @@
 import './globals.css';
 import { ReactNode } from 'react';
-import { createClient } from '@/lib/auth/supabaseServer';
-import { SignOutButton } from '@/components/auth/SignOutButton';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata = {
   title: 'TowerOfBabel',
@@ -12,32 +11,17 @@ export const metadata = {
  * Root layout component for the TowerOfBabel application.
  * Server Component by default (no 'use client' directive).
  *
- * Displays sign-out button in navigation when user is authenticated.
+ * Provides basic HTML structure and global components.
+ * Navigation is handled by route-specific layouts (dashboard, auth, etc.).
  *
  * @param children - Child components to render in the main content area
  */
-export default async function RootLayout({ children }: { children: ReactNode }): Promise<JSX.Element> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
   return (
     <html lang="en" className="dark">
       <body>
-        {/* Navigation bar with conditional sign-out button */}
-        <nav className="border-b p-4 bg-background">
-          <div className="container mx-auto">
-            <div className="flex items-center justify-between">
-              <div className="text-xl font-bold text-foreground">TowerOfBabel</div>
-              <div className="flex items-center gap-4">
-                {user && <SignOutButton />}
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <main className="container mx-auto px-4 py-8">{children}</main>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

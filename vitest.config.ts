@@ -7,8 +7,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     environmentMatchGlobs: [
-      // Use node environment for integration tests (not jsdom)
-      ['tests/integration/**', 'node'],
+      // Use node environment for API and lib integration tests only
+      // React component integration tests (*.tsx) will use jsdom
+      ['tests/integration/api/**', 'node'],
+      ['tests/integration/lib/**', 'node'],
     ],
     coverage: {
       provider: 'v8',

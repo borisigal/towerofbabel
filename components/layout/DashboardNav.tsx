@@ -1,6 +1,7 @@
 'use client';
 
 import { SignOutButton } from '@/components/auth/SignOutButton';
+import { UsageIndicator } from '@/components/features/dashboard/UsageIndicator';
 
 /**
  * Dashboard Navigation Component
@@ -43,13 +44,17 @@ export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.El
             </h1>
           </div>
 
-          {/* User Info (hidden on small mobile, visible on larger screens) */}
-          <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-300">
-            {displayName}
-          </div>
+          {/* Right side: User Info, Usage Indicator, Sign-out Button */}
+          <div className="flex items-center gap-4">
+            {/* User Info (hidden on small mobile, visible on larger screens) */}
+            <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-300">
+              {displayName}
+            </div>
 
-          {/* Sign-out Button */}
-          <div className="flex items-center">
+            {/* Usage Indicator */}
+            <UsageIndicator />
+
+            {/* Sign-out Button */}
             <SignOutButton />
           </div>
         </div>

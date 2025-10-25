@@ -16,6 +16,7 @@ import {
 import { CultureSelector } from './CultureSelector';
 import { InterpretationResult } from './InterpretationResult';
 import { type CultureCode, type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
+import { useUsageStore } from '@/lib/stores/usageStore';
 
 /**
  * Form data structure for interpretation request.
@@ -47,6 +48,7 @@ interface InterpretationFormData {
  */
 export function InterpretationForm(): JSX.Element {
   const router = useRouter();
+  const { incrementUsage } = useUsageStore();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<InterpretationResultType | null>(null);
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
@@ -122,6 +124,9 @@ export function InterpretationForm(): JSX.Element {
         // Store result for display
         setResult(responseData.data.interpretation);
         setMessagesRemaining(responseData.metadata?.messages_remaining);
+
+        // Update usage counter in Zustand store (real-time UI update - Story 3.2)
+        incrementUsage();
 
         // Refresh the page to update usage counter (server component)
         router.refresh();

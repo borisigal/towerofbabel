@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { DashboardHeader } from '@/components/features/dashboard/DashboardHeader';
 import { UsageDisplay } from '@/components/features/dashboard/UsageDisplay';
+import { UsageNotificationBanner } from '@/components/features/dashboard/UsageNotificationBanner';
+import { UsageSyncProvider } from '@/components/features/dashboard/UsageSyncProvider';
 import { InterpretationForm } from '@/components/features/interpretation/InterpretationForm';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 
@@ -81,19 +83,24 @@ async function DashboardContent(): Promise<JSX.Element> {
 
   // 4. RENDER dashboard with user data from database
   return (
-    <div>
-      {/* Welcome Header */}
-      <DashboardHeader name={userRecord.name} email={userRecord.email} />
+    <UsageSyncProvider>
+      <div>
+        {/* Welcome Header */}
+        <DashboardHeader name={userRecord.name} email={userRecord.email} />
 
-      {/* Interpretation Form - Story 2.1 */}
-      <InterpretationForm />
+        {/* Usage Notification Banner - Story 3.2 */}
+        <UsageNotificationBanner />
 
-      {/* Usage Display */}
-      <UsageDisplay
-        tier={userRecord.tier as 'trial' | 'payg' | 'pro'}
-        messagesUsedCount={userRecord.messages_used_count}
-        messagesLimit={messagesLimit}
-      />
-    </div>
+        {/* Interpretation Form - Story 2.1 */}
+        <InterpretationForm />
+
+        {/* Usage Display */}
+        <UsageDisplay
+          tier={userRecord.tier as 'trial' | 'payg' | 'pro'}
+          messagesUsedCount={userRecord.messages_used_count}
+          messagesLimit={messagesLimit}
+        />
+      </div>
+    </UsageSyncProvider>
   );
 }
