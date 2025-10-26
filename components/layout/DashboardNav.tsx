@@ -2,6 +2,10 @@
 
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { UsageIndicator } from '@/components/features/dashboard/UsageIndicator';
+import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
+import { useUsageStore } from '@/lib/stores/usageStore';
+import { Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Dashboard Navigation Component
@@ -30,8 +34,16 @@ interface DashboardNavProps {
   userEmail: string;
 }
 
+/**
+ * DashboardNav component - renders navigation bar with upgrade button and user info.
+ *
+ * @param props - Dashboard navigation props
+ * @returns JSX element
+ */
 export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.Element {
   const displayName = userName || userEmail;
+  const { setOpen } = useUpgradeModalStore();
+  const { tier } = useUsageStore();
 
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow border-b border-gray-200 dark:border-gray-700">
@@ -44,7 +56,7 @@ export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.El
             </h1>
           </div>
 
-          {/* Right side: User Info, Usage Indicator, Sign-out Button */}
+          {/* Right side: User Info, Usage Indicator, Upgrade Button, Sign-out Button */}
           <div className="flex items-center gap-4">
             {/* User Info (hidden on small mobile, visible on larger screens) */}
             <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-300">
@@ -53,6 +65,20 @@ export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.El
 
             {/* Usage Indicator */}
             <UsageIndicator />
+
+            {/* Upgrade Button (only shown for non-Pro users) - Story 3.3 */}
+            {tier !== 'pro' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen(true, 'proactive')}
+                className="flex items-center gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                aria-label="Upgrade your plan"
+              >
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Upgrade</span>
+              </Button>
+            )}
 
             {/* Sign-out Button */}
             <SignOutButton />

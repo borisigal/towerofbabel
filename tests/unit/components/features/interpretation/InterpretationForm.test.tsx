@@ -4,6 +4,36 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { InterpretationForm } from '@/components/features/interpretation/InterpretationForm';
 
+// Mock Zustand stores
+vi.mock('@/lib/stores/usageStore', () => ({
+  useUsageStore: vi.fn(() => ({
+    messagesUsed: 0,
+    messagesLimit: 10,
+    tier: 'trial',
+    setUsage: vi.fn(),
+    incrementUsage: vi.fn(),
+  })),
+}));
+
+vi.mock('@/lib/stores/upgradeModalStore', () => ({
+  useUpgradeModalStore: vi.fn(() => ({
+    open: false,
+    trigger: 'proactive',
+    setOpen: vi.fn(),
+  })),
+}));
+
+// Mock Next.js router
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  })),
+}));
+
 describe('InterpretationForm', () => {
   beforeEach(() => {
     // Clear any mocks before each test

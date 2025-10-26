@@ -17,6 +17,7 @@ import { CultureSelector } from './CultureSelector';
 import { InterpretationResult } from './InterpretationResult';
 import { type CultureCode, type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
 import { useUsageStore } from '@/lib/stores/usageStore';
+import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
 
 /**
  * Form data structure for interpretation request.
@@ -49,6 +50,7 @@ interface InterpretationFormData {
 export function InterpretationForm(): JSX.Element {
   const router = useRouter();
   const { incrementUsage } = useUsageStore();
+  const { setOpen: setUpgradeModalOpen } = useUpgradeModalStore();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<InterpretationResultType | null>(null);
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
@@ -116,6 +118,20 @@ export function InterpretationForm(): JSX.Element {
       });
 
       const responseData = await response.json();
+
+      // Check for 403 errors (limit exceeded or trial expired) - Story 3.3
+      if (response.status === 403) {
+        const errorCode = responseData.error?.code;
+        if (errorCode === 'LIMIT_EXCEEDED' || errorCode === 'TRIAL_EXPIRED') {
+          console.log('Usage limit reached, opening upgrade modal');
+          setUpgradeModalOpen(true, 'limit_exceeded');
+          // Still set error message for display
+          setError(
+            responseData.error?.message || 'Usage limit reached. Please upgrade to continue.'
+          );
+          return;
+        }
+      }
 
       if (responseData.success) {
         console.log('Interpretation successful:', responseData.data);

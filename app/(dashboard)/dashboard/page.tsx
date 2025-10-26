@@ -8,6 +8,7 @@ import { UsageNotificationBanner } from '@/components/features/dashboard/UsageNo
 import { UsageSyncProvider } from '@/components/features/dashboard/UsageSyncProvider';
 import { InterpretationForm } from '@/components/features/interpretation/InterpretationForm';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
+import { UpgradeModalProvider } from '@/components/features/upgrade/UpgradeModalProvider';
 
 /**
  * Dashboard page - Main authenticated user workspace.
@@ -101,6 +102,9 @@ async function DashboardContent(): Promise<JSX.Element> {
           messagesLimit={messagesLimit}
         />
       </div>
+
+      {/* Upgrade Modal - Story 3.3 */}
+      <UpgradeModalProvider />
     </UsageSyncProvider>
   );
 }

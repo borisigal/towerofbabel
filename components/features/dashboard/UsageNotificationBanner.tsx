@@ -23,7 +23,7 @@
 
 import React from 'react';
 import { useUsageNotification } from '@/lib/hooks/useUsageNotification';
-import Link from 'next/link';
+import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
 
 /**
  * UsageNotificationBanner Component
@@ -46,6 +46,7 @@ import Link from 'next/link';
  */
 export function UsageNotificationBanner(): JSX.Element | null {
   const { show, message, onDismiss, upgradeUrl } = useUsageNotification();
+  const { setOpen } = useUpgradeModalStore();
 
   // Don't render if notification shouldn't be shown
   if (!show) {
@@ -66,12 +67,13 @@ export function UsageNotificationBanner(): JSX.Element | null {
             {upgradeUrl && (
               <>
                 {' '}
-                <Link
-                  href={upgradeUrl}
+                <button
+                  onClick={() => setOpen(true, 'notification_banner')}
                   className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100 transition-colors"
+                  type="button"
                 >
                   Upgrade Now
-                </Link>
+                </button>
               </>
             )}
           </p>
