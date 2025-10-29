@@ -36,6 +36,11 @@ interface UsageDisplayProps {
   messagesLimit?: number;
 }
 
+/**
+ * UsageDisplay component renders usage information with progress bar
+ * @param {UsageDisplayProps} props - Component props
+ * @returns {JSX.Element} Usage display element
+ */
 export function UsageDisplay({
   tier,
   messagesUsedCount,

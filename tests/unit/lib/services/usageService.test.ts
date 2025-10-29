@@ -43,6 +43,7 @@ describe('checkUsageLimit', () => {
         tier: 'trial',
         messages_used_count: 5,
         messages_reset_date: new Date(),
+        trial_start_date: new Date(),
         is_admin: false,
         created_at: new Date(),
       });
@@ -63,6 +64,7 @@ describe('checkUsageLimit', () => {
         tier: 'trial',
         messages_used_count: 9,
         messages_reset_date: new Date(),
+        trial_start_date: new Date(),
         is_admin: false,
         created_at: new Date(),
       });
@@ -83,6 +85,7 @@ describe('checkUsageLimit', () => {
         tier: 'trial',
         messages_used_count: 10,
         messages_reset_date: new Date(),
+        trial_start_date: new Date(),
         is_admin: false,
         created_at: new Date(),
       });
@@ -104,6 +107,7 @@ describe('checkUsageLimit', () => {
         tier: 'trial',
         messages_used_count: 15,
         messages_reset_date: new Date(),
+        trial_start_date: new Date(),
         is_admin: false,
         created_at: new Date(),
       });

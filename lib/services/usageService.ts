@@ -183,7 +183,7 @@ export async function checkUsageLimit(
   if (tier === 'trial') {
     // Check trial expiration FIRST (time-based check)
     const expirationCheck = checkTrialExpired({
-      trial_start_date: userRecord.trial_start_date,
+      trial_start_date: userRecord.trial_start_date || new Date(),
     });
 
     if (expirationCheck.expired) {
@@ -225,8 +225,8 @@ export async function checkUsageLimit(
       return {
         allowed: false,
         messagesRemaining: 0,
-        error: 'LIMIT_EXCEEDED',
-        message: `Trial limit reached (${TRIAL_MESSAGE_LIMIT} messages)`,
+        error: 'TRIAL_LIMIT_EXCEEDED',
+        message: `Trial limit of ${TRIAL_MESSAGE_LIMIT} messages exceeded`,
         tier: 'trial',
         messagesUsed: messages_used_count,
         messagesLimit: TRIAL_MESSAGE_LIMIT,
@@ -284,8 +284,8 @@ export async function checkUsageLimit(
       return {
         allowed: false,
         messagesRemaining: 0,
-        error: 'LIMIT_EXCEEDED',
-        message: `Monthly limit reached (${PRO_MESSAGE_LIMIT} messages)`,
+        error: 'PRO_LIMIT_EXCEEDED',
+        message: `Pro monthly limit of ${PRO_MESSAGE_LIMIT} messages exceeded`,
         tier: 'pro',
         messagesUsed: messages_used_count,
         messagesLimit: PRO_MESSAGE_LIMIT,

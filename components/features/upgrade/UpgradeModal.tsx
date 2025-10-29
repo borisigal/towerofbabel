@@ -14,6 +14,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PricingCard } from './PricingCard';
 import type { UpgradeModalTrigger } from '@/lib/stores/upgradeModalStore';
+import { log } from '@/lib/observability/logger';
 
 /**
  * Props for UpgradeModal component
@@ -80,70 +82,165 @@ function getProMessageLimit(): string {
 export function UpgradeModal({
   open,
   onOpenChange,
-  trigger: _trigger,
+  trigger,
   currentTier,
   messagesUsed: _messagesUsed,
   messagesLimit: _messagesLimit,
-}: UpgradeModalProps) {
+}: UpgradeModalProps): JSX.Element {
+  const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [loadingPro, setLoadingPro] = useState(false);
+  const [loadingPayg, setLoadingPayg] = useState(false);
   const proMessageLimit = getProMessageLimit();
 
   /**
-   * TODO: Story 3.4 - Redirect to Lemon Squeezy Checkout
+   * Story 3.4 - Redirect to Lemon Squeezy Checkout for Pro subscription
    *
-   * Implementation steps:
-   * 1. Call /api/checkout/create endpoint
+   * Implementation:
+   * 1. Call /api/checkout/pro endpoint to create checkout session
    * 2. Receive Lemon Squeezy checkout URL
    * 3. Redirect user to checkout page
-   * 4. Handle success/cancel callbacks
    */
   const handleSubscribeToPro = async (): Promise<void> => {
-    setLoading(true);
+    setLoadingPro(true);
+
+    log.info('User initiated Pro subscription checkout', {
+      trigger,
+      currentTier
+    });
+
     try {
-      // Placeholder: Show coming soon message
-      toast({
-        title: 'Coming Soon',
-        description: 'Pro subscription will be available in Story 3.4',
+      // Call the Pro checkout API endpoint
+      const response = await fetch('/api/checkout/pro', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-    } catch {
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        const errorMessage = data.error?.message || 'Failed to create checkout session';
+        log.error('Pro checkout creation failed', {
+          trigger,
+          currentTier,
+          error: data.error,
+          status: response.status
+        });
+        throw new Error(errorMessage);
+      }
+
+      // Redirect to Lemon Squeezy checkout
+      if (data.checkoutUrl) {
+        log.info('Redirecting to Pro checkout', {
+          trigger,
+          checkoutUrl: data.checkoutUrl
+        });
+        window.location.href = data.checkoutUrl;
+      } else {
+        log.error('No checkout URL received from API', {
+          trigger,
+          response: data
+        });
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      log.error('Pro subscription checkout error', {
+        trigger,
+        currentTier,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
       toast({
-        title: 'Error',
-        description: 'Failed to start subscription. Please try again.',
+        title: 'Subscription Error',
+        description: error instanceof Error ? error.message : 'Failed to start subscription. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
+      setLoadingPro(false);
     }
+    // Don't set loading to false here if redirecting (only on error)
   };
 
   /**
-   * TODO: Story 3.4 - Create PAYG subscription via Lemon Squeezy API
+   * Story 3.4 - Create PAYG subscription via Lemon Squeezy API
    *
-   * Implementation steps:
+   * Implementation:
    * 1. Call /api/subscription/payg/create endpoint
    * 2. Create usage-based subscription in Lemon Squeezy
    * 3. Update user tier to 'payg' in database
    * 4. Close modal, show success message
    */
   const handleStartPayAsYouGo = async (): Promise<void> => {
-    setLoading(true);
+    setLoadingPayg(true);
+
+    log.info('User initiated PAYG subscription', {
+      trigger,
+      currentTier
+    });
+
     try {
-      // Placeholder: Show coming soon message
-      toast({
-        title: 'Coming Soon',
-        description: 'Pay-As-You-Go will be available in Story 3.4',
+      // Call the PAYG subscription API endpoint
+      const response = await fetch('/api/subscription/payg/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-    } catch {
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        const errorMessage = data.error?.message || 'Failed to create PAYG subscription';
+        log.error('PAYG subscription creation failed', {
+          trigger,
+          currentTier,
+          error: data.error,
+          status: response.status
+        });
+        throw new Error(errorMessage);
+      }
+
+      log.info('PAYG subscription created successfully', {
+        trigger,
+        subscriptionId: data.subscription?.id,
+        tier: 'payg'
+      });
+
+      // Success - close modal and show confirmation
       toast({
-        title: 'Error',
-        description: 'Failed to start Pay-As-You-Go. Please try again.',
+        title: 'Pay-As-You-Go Activated!',
+        description: data.subscription?.message || 'You will be billed monthly for your usage.',
+      });
+
+      // Close the modal after success
+      onOpenChange(false);
+
+      // Refresh to update UI with new tier (using router.refresh for better UX)
+      setTimeout(() => {
+        router.refresh();
+      }, 1500);
+    } catch (error) {
+      log.error('PAYG subscription error', {
+        trigger,
+        currentTier,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      toast({
+        title: 'Subscription Error',
+        description: error instanceof Error ? error.message : 'Failed to start Pay-As-You-Go. Please try again.',
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setLoadingPayg(false);
     }
   };
+
+  // Prevent any interaction while either button is loading
+  const anyLoading = loadingPro || loadingPayg;
 
   // Pricing tier configurations
   const pricingTiers = {
@@ -161,6 +258,7 @@ export function UpgradeModal({
       ctaText: 'Current Plan',
       ctaVariant: 'outline' as const,
       disabled: true,
+      loading: false,
       onCtaClick: () => {}, // No action for trial tier
     },
     payg: {
@@ -178,7 +276,8 @@ export function UpgradeModal({
       ],
       ctaText: 'Start Pay-As-You-Go',
       ctaVariant: 'secondary' as const,
-      disabled: loading || currentTier === 'payg',
+      disabled: anyLoading || currentTier === 'payg',
+      loading: loadingPayg,
       onCtaClick: handleStartPayAsYouGo,
     },
     pro: {
@@ -196,7 +295,8 @@ export function UpgradeModal({
       ctaText: 'Subscribe to Pro',
       ctaVariant: 'default' as const,
       recommended: true,
-      disabled: loading || currentTier === 'pro',
+      disabled: anyLoading || currentTier === 'pro',
+      loading: loadingPro,
       onCtaClick: handleSubscribeToPro,
     },
   };

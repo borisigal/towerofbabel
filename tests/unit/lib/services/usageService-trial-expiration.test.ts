@@ -145,8 +145,8 @@ describe('usageService - Trial Expiration Logic', () => {
 
       // Assert
       expect(result.allowed).toBe(false);
-      expect(result.error).toBe('LIMIT_EXCEEDED');
-      expect(result.message).toContain('Trial limit reached (10 messages)');
+      expect(result.error).toBe('TRIAL_LIMIT_EXCEEDED');
+      expect(result.message).toContain('Trial limit of 10 messages exceeded');
       expect(result.tier).toBe('trial');
       expect(result.messagesUsed).toBe(10);
       expect(result.messagesLimit).toBe(10);
@@ -208,8 +208,8 @@ describe('usageService - Trial Expiration Logic', () => {
 
       // Assert: LIMIT_EXCEEDED should be returned (message limit hit)
       expect(result.allowed).toBe(false);
-      expect(result.error).toBe('LIMIT_EXCEEDED');
-      expect(result.message).toContain('Trial limit reached (10 messages)');
+      expect(result.error).toBe('TRIAL_LIMIT_EXCEEDED');
+      expect(result.message).toContain('Trial limit of 10 messages exceeded');
       expect(result.tier).toBe('trial');
       expect(result.messagesUsed).toBe(10);
       expect(result.messagesLimit).toBe(10);

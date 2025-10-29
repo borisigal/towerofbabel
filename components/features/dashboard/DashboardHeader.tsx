@@ -24,6 +24,11 @@ interface DashboardHeaderProps {
   email: string;
 }
 
+/**
+ * DashboardHeader component renders personalized welcome message
+ * @param {DashboardHeaderProps} props - Component props
+ * @returns {JSX.Element} Dashboard header element
+ */
 export function DashboardHeader({ name, email }: DashboardHeaderProps): JSX.Element {
   const displayName = name || email;
 

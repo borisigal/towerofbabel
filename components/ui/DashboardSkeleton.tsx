@@ -12,6 +12,10 @@
  * Uses Tailwind animate-pulse for loading animation.
  */
 
+/**
+ * DashboardSkeleton component renders loading placeholder for dashboard
+ * @returns {JSX.Element} Skeleton loading element
+ */
 export function DashboardSkeleton(): JSX.Element {
   return (
     <div className="animate-pulse">

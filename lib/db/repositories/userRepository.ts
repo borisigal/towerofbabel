@@ -39,7 +39,17 @@ import { executeWithCircuitBreaker } from '@/lib/db/connectionMonitor';
  * }
  * ```
  */
-export async function findUserById(userId: string) {
+export async function findUserById(userId: string): Promise<{
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  messages_used_count: number;
+  messages_reset_date: Date | null;
+  trial_start_date: Date | null;
+  is_admin: boolean;
+  created_at: Date;
+} | null> {
   return executeWithCircuitBreaker(() =>
     prisma.user.findUnique({
       where: { id: userId },
@@ -66,7 +76,14 @@ export async function findUserById(userId: string) {
  * @param email - User email address
  * @returns User record or null if not found
  */
-export async function findUserByEmail(email: string) {
+export async function findUserByEmail(email: string): Promise<{
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  messages_used_count: number;
+  created_at: Date;
+} | null> {
   return executeWithCircuitBreaker(() =>
     prisma.user.findUnique({
       where: { email },
@@ -105,7 +122,13 @@ export async function createUser(data: {
   id: string;
   email: string;
   name?: string;
-}) {
+}): Promise<{
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  messages_used_count: number;
+}> {
   return executeWithCircuitBreaker(() =>
     prisma.user.create({
       data: {
@@ -136,7 +159,10 @@ export async function createUser(data: {
  * @param userId - User UUID
  * @returns Updated user record with new message count
  */
-export async function incrementUserUsage(userId: string) {
+export async function incrementUserUsage(userId: string): Promise<{
+  messages_used_count: number;
+  tier: string;
+}> {
   return executeWithCircuitBreaker(() =>
     prisma.user.update({
       where: { id: userId },
@@ -166,7 +192,11 @@ export async function incrementUserUsage(userId: string) {
 export async function updateUserTier(
   userId: string,
   tier: 'trial' | 'payg' | 'pro'
-) {
+): Promise<{
+  id: string;
+  tier: string;
+  messages_used_count: number;
+}> {
   return executeWithCircuitBreaker(() =>
     prisma.user.update({
       where: { id: userId },
@@ -188,7 +218,11 @@ export async function updateUserTier(
  * @param userId - User UUID
  * @returns Updated user record
  */
-export async function resetUserUsage(userId: string) {
+export async function resetUserUsage(userId: string): Promise<{
+  id: string;
+  messages_used_count: number;
+  messages_reset_date: Date | null;
+}> {
   return executeWithCircuitBreaker(() =>
     prisma.user.update({
       where: { id: userId },
@@ -227,7 +261,12 @@ export async function resetUserUsage(userId: string) {
  *
  * @see architecture/16-coding-standards.md#jsdoc-for-public-apis
  */
-export async function resetProUserUsage(userId: string) {
+export async function resetProUserUsage(userId: string): Promise<{
+  id: string;
+  tier: string;
+  messages_used_count: number;
+  messages_reset_date: Date | null;
+}> {
   const logger = (await import('@/lib/observability/logger')).logger;
 
   // Calculate next reset date (30 days from now)
@@ -272,7 +311,10 @@ export async function resetProUserUsage(userId: string) {
 export async function linkLemonSqueezyCustomer(
   userId: string,
   lemonSqueezyCustomerId: string
-) {
+): Promise<{
+  id: string;
+  lemonsqueezy_customer_id: string | null;
+}> {
   return executeWithCircuitBreaker(() =>
     prisma.user.update({
       where: { id: userId },
@@ -294,6 +336,6 @@ export async function linkLemonSqueezyCustomer(
  *
  * @returns Total number of users
  */
-export async function getUserCount() {
+export async function getUserCount(): Promise<number> {
   return executeWithCircuitBreaker(() => prisma.user.count());
 }

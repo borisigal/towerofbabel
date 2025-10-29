@@ -1,5 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import { findUserById, createUser } from '@/lib/db/repositories/userRepository';
+import { log } from '@/lib/observability/logger';
 
 /**
  * Gets existing user from database or creates new user on first sign-in.
@@ -44,10 +45,18 @@ export async function getOrCreateUser(
       name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
     });
 
-    console.log('New user created:', newUser.email, '(tier:', newUser.tier, ')');
+    log.info('New user created', {
+      email: newUser.email,
+      tier: newUser.tier,
+      userId: newUser.id
+    });
     return newUser;
   }
 
-  console.log('Existing user signed in:', existingUser.email, '(tier:', existingUser.tier, ')');
+  log.info('Existing user signed in', {
+    email: existingUser.email,
+    tier: existingUser.tier,
+    userId: existingUser.id
+  });
   return existingUser;
 }

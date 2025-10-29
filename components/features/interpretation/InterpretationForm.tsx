@@ -18,6 +18,7 @@ import { InterpretationResult } from './InterpretationResult';
 import { type CultureCode, type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
 import { useUsageStore } from '@/lib/stores/usageStore';
 import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
+import { log } from '@/lib/observability/logger';
 
 /**
  * Form data structure for interpretation request.
@@ -65,8 +66,8 @@ export function InterpretationForm(): JSX.Element {
   } = useForm<InterpretationFormData>({
     defaultValues: {
       message: '',
-      sender_culture: 'american',
-      receiver_culture: 'american',
+      sender_culture: '',
+      receiver_culture: '',
     },
   });
 
@@ -99,8 +100,8 @@ export function InterpretationForm(): JSX.Element {
     setIsLoading(true);
 
     try {
-      console.log('Submitting interpretation request:', {
-        message: data.message,
+      log.info('Submitting interpretation request', {
+        messageLength: data.message.length,
         sender_culture: data.sender_culture,
         receiver_culture: data.receiver_culture,
         mode: 'inbound',
@@ -123,7 +124,7 @@ export function InterpretationForm(): JSX.Element {
       if (response.status === 403) {
         const errorCode = responseData.error?.code;
         if (errorCode === 'LIMIT_EXCEEDED' || errorCode === 'TRIAL_EXPIRED') {
-          console.log('Usage limit reached, opening upgrade modal');
+          log.info('Usage limit reached, opening upgrade modal', { errorCode });
           setUpgradeModalOpen(true, 'limit_exceeded');
           // Still set error message for display
           setError(
@@ -134,8 +135,9 @@ export function InterpretationForm(): JSX.Element {
       }
 
       if (responseData.success) {
-        console.log('Interpretation successful:', responseData.data);
-        console.log('Messages remaining:', responseData.metadata?.messages_remaining);
+        log.info('Interpretation successful', {
+          messagesRemaining: responseData.metadata?.messages_remaining
+        });
 
         // Store result for display
         setResult(responseData.data.interpretation);
@@ -155,13 +157,15 @@ export function InterpretationForm(): JSX.Element {
           }
         }, 100);
       } else {
-        console.error('Interpretation failed:', responseData.error);
+        log.error('Interpretation failed', { error: responseData.error });
         setError(
           responseData.error?.message || 'Interpretation failed. Please try again.'
         );
       }
     } catch (error) {
-      console.error('Interpretation request failed:', error);
+      log.error('Interpretation request failed', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       setError('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);

@@ -38,6 +38,7 @@ import {
 } from '@/lib/llm/errors';
 import { createInterpretation } from '@/lib/db/repositories/interpretationRepository';
 import { incrementUserUsage } from '@/lib/db/repositories/userRepository';
+import { reportInterpretationUsage } from '@/lib/lemonsqueezy/usageReporting';
 import { logger } from '@/lib/observability/logger';
 import { CULTURES, CultureCode, InterpretationType } from '@/lib/types/models';
 
@@ -378,7 +379,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 9. PERSISTENCE
     // ============================================
     // Save interpretation metadata (NO message content - privacy-first)
-    await createInterpretation({
+    const interpretation = await createInterpretation({
       user_id: user.id,
       culture_sender: body.sender_culture as CultureCode,
       culture_receiver: body.receiver_culture as CultureCode,
@@ -393,6 +394,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Increment user message count
     await incrementUserUsage(user.id);
+
+    // Report usage to Lemon Squeezy for PAYG users
+    // Non-blocking: errors are logged but don't prevent interpretation from succeeding
+    if (usageCheck.tier === 'payg') {
+      reportInterpretationUsage(user.id, interpretation.id).catch(error => {
+        logger.error({ userId: user.id, interpretationId: interpretation.id, error },
+          'Failed to report usage to Lemon Squeezy');
+      });
+    }
 
     // ============================================
     // 10. LOGGING (Structured, Privacy-First)

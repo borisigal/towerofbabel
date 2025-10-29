@@ -130,8 +130,8 @@ describe('usageService - Pro Tier Monthly Reset Logic', () => {
 
       // Assert: Should be blocked (limit reached, reset date not reached)
       expect(result.allowed).toBe(false);
-      expect(result.error).toBe('LIMIT_EXCEEDED');
-      expect(result.message).toContain('Monthly limit reached (100 messages)');
+      expect(result.error).toBe('PRO_LIMIT_EXCEEDED');
+      expect(result.message).toContain('Pro monthly limit of 100 messages exceeded');
       expect(result.tier).toBe('pro');
       expect(result.messagesUsed).toBe(100);
       expect(result.messagesLimit).toBe(100);

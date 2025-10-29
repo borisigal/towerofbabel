@@ -14,6 +14,10 @@
  * - Total: ~380px (matches p-8 padding + content)
  */
 
+/**
+ * InterpretationPlaceholder component renders placeholder for interpretation form
+ * @returns {JSX.Element} Placeholder element
+ */
 export function InterpretationPlaceholder(): JSX.Element {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center min-h-[380px] flex flex-col items-center justify-center">

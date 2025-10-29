@@ -14,6 +14,16 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { UpgradeModal } from '@/components/features/upgrade/UpgradeModal';
 
+// Mock Next.js router
+const mockPush = vi.fn();
+const mockRefresh = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    refresh: mockRefresh,
+  }),
+}));
+
 // Mock toast hook
 const mockToast = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
@@ -174,9 +184,23 @@ describe('UpgradeModal', () => {
     });
   });
 
-  describe('CTA Button Handlers (Placeholder for Story 3.4)', () => {
-    it('should show toast when "Subscribe to Pro" is clicked', async () => {
+  describe('CTA Button Handlers', () => {
+    it('should call Pro checkout API when "Subscribe to Pro" is clicked', async () => {
       const user = userEvent.setup();
+
+      // Mock successful checkout response
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          checkoutUrl: 'https://checkout.lemonsqueezy.com/test-pro',
+        }),
+      });
+
+      // Mock window.location.href
+      delete (window as any).location;
+      window.location = { href: '' } as any;
+
       render(<UpgradeModal {...defaultProps} />);
 
       const proButton = screen.getByRole('button', {
@@ -186,15 +210,27 @@ describe('UpgradeModal', () => {
       await user.click(proButton);
 
       await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith({
-          title: 'Coming Soon',
-          description: 'Pro subscription will be available in Story 3.4',
+        expect(global.fetch).toHaveBeenCalledWith('/api/checkout/pro', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
       });
     });
 
-    it('should show toast when "Start Pay-As-You-Go" is clicked', async () => {
+    it('should call PAYG subscription API when "Start Pay-As-You-Go" is clicked', async () => {
       const user = userEvent.setup();
+
+      // Mock successful PAYG subscription creation response
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          tier: 'payg',
+        }),
+      });
+
       render(<UpgradeModal {...defaultProps} />);
 
       const paygButton = screen.getByRole('button', {
@@ -204,9 +240,11 @@ describe('UpgradeModal', () => {
       await user.click(paygButton);
 
       await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith({
-          title: 'Coming Soon',
-          description: 'Pay-As-You-Go will be available in Story 3.4',
+        expect(global.fetch).toHaveBeenCalledWith('/api/subscription/payg/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
       });
     });

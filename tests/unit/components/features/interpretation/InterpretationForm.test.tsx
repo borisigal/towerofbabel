@@ -84,19 +84,21 @@ describe('InterpretationForm', () => {
 
     const textarea = screen.getByPlaceholderText(
       'Paste the message you want to interpret...'
-    );
+    ) as HTMLTextAreaElement;
 
     // Create a string with 2001 characters
     const longMessage = 'a'.repeat(2001);
-    await user.clear(textarea);
-    await user.type(textarea, longMessage);
+
+    // Use paste instead of type for performance (typing 2001 chars is too slow)
+    await user.click(textarea);
+    await user.paste(longMessage);
 
     await waitFor(() => {
-      const counter = screen.getByText(/2001 \/ 2,000 characters/);
+      const counter = screen.getByText(/2,?001 \/ 2,000 characters/);
       expect(counter).toHaveClass('text-destructive');
       expect(counter).toHaveClass('font-semibold');
     });
-  });
+  }, 10000);
 
   it('should show warning message when character count exceeds 2000', async () => {
     const user = userEvent.setup();
@@ -104,16 +106,19 @@ describe('InterpretationForm', () => {
 
     const textarea = screen.getByPlaceholderText(
       'Paste the message you want to interpret...'
-    );
+    ) as HTMLTextAreaElement;
 
     const longMessage = 'a'.repeat(2001);
-    await user.clear(textarea);
-    await user.type(textarea, longMessage);
+
+    // Use paste for performance
+    await user.click(textarea);
+    await user.paste(longMessage);
 
     await waitFor(() => {
-      expect(screen.getByText(/Message too long/)).toBeInTheDocument();
+      // Warning text is concatenated with counter: "2,001 / 2,000 characters - Message too long"
+      expect(screen.getByText(/- Message too long/)).toBeInTheDocument();
     });
-  });
+  }, 10000);
 
   it('should disable submit button when message is empty', () => {
     render(<InterpretationForm />);
@@ -127,16 +132,19 @@ describe('InterpretationForm', () => {
 
     const textarea = screen.getByPlaceholderText(
       'Paste the message you want to interpret...'
-    );
+    ) as HTMLTextAreaElement;
+
     const longMessage = 'a'.repeat(2001);
-    await user.clear(textarea);
-    await user.type(textarea, longMessage);
+
+    // Use paste for performance
+    await user.click(textarea);
+    await user.paste(longMessage);
 
     await waitFor(() => {
       const button = screen.getByRole('button', { name: /interpret/i });
       expect(button).toBeDisabled();
     });
-  });
+  }, 10000);
 
   it('should disable submit button when cultures not selected', async () => {
     const user = userEvent.setup();
@@ -165,20 +173,27 @@ describe('InterpretationForm', () => {
     );
     await user.type(textarea, 'Test message for interpretation');
 
-    // Select sender culture
+    // Select sender culture - wait for combobox to be available
+    await waitFor(async () => {
+      const comboboxes = screen.getAllByRole('combobox');
+      expect(comboboxes.length).toBeGreaterThan(0);
+    });
+
     const senderTrigger = screen.getAllByRole('combobox')[0];
-    if (senderTrigger) await user.click(senderTrigger);
-    await waitFor(() => {
-      const americanOption = screen.getByRole('option', { name: 'American' });
-      if (americanOption) user.click(americanOption);
+    await user.click(senderTrigger);
+
+    await waitFor(async () => {
+      const americanOption = screen.getByRole('option', { name: /American/ });
+      await user.click(americanOption);
     });
 
     // Select receiver culture
     const receiverTrigger = screen.getAllByRole('combobox')[1];
-    if (receiverTrigger) await user.click(receiverTrigger);
-    await waitFor(() => {
-      const japaneseOption = screen.getByRole('option', { name: 'Japanese' });
-      if (japaneseOption) user.click(japaneseOption);
+    await user.click(receiverTrigger);
+
+    await waitFor(async () => {
+      const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
+      await user.click(japaneseOption);
     });
 
     await waitFor(() => {
@@ -198,18 +213,43 @@ describe('InterpretationForm', () => {
     await user.type(textarea, 'Test message');
 
     // Select American for both sender and receiver
-    const senderTrigger = screen.getAllByRole('combobox')[0];
-    if (senderTrigger) await user.click(senderTrigger);
-    await waitFor(() => {
-      const americanOption = screen.getByRole('option', { name: 'American' });
-      if (americanOption) user.click(americanOption);
+    await waitFor(async () => {
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+      expect(comboboxes.length).toBeGreaterThan(0);
+
     });
 
+    
+
+    const senderTrigger = screen.getAllByRole('combobox')[0];
+    await user.click(senderTrigger);
+    await waitFor(async () => {
+      const americanOption = screen.getByRole('option', { name: /American/ });
+      await user.click(americanOption);
+    });
+
+    await waitFor(async () => {
+
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+
+      expect(comboboxes.length).toBeGreaterThan(1);
+
+
+    });
+
+
+    
+
+
     const receiverTrigger = screen.getAllByRole('combobox')[1];
-    if (receiverTrigger) await user.click(receiverTrigger);
-    await waitFor(() => {
-      const americanOption = screen.getByRole('option', { name: 'American' });
-      if (americanOption) user.click(americanOption);
+    await user.click(receiverTrigger);
+    await waitFor(async () => {
+      const americanOption = screen.getByRole('option', { name: /American/ });
+      await user.click(americanOption);
     });
 
     // Should not show validation error about cultures being the same
@@ -224,6 +264,13 @@ describe('InterpretationForm', () => {
   });
 
   it('should show loading state on form submission', async () => {
+    // Mock fetch to delay response so we can check loading state
+    let resolveFunc: (value: any) => void;
+    const fetchPromise = new Promise((resolve) => {
+      resolveFunc = resolve;
+    });
+
+    global.fetch = vi.fn().mockReturnValue(fetchPromise);
     const user = userEvent.setup();
     render(<InterpretationForm />);
 
@@ -234,18 +281,43 @@ describe('InterpretationForm', () => {
     await user.type(textarea, 'Test message');
 
     // Select cultures
-    const senderTrigger = screen.getAllByRole('combobox')[0];
-    if (senderTrigger) await user.click(senderTrigger);
-    await waitFor(() => {
-      const americanOption = screen.getByRole('option', { name: 'American' });
-      if (americanOption) user.click(americanOption);
+    await waitFor(async () => {
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+      expect(comboboxes.length).toBeGreaterThan(0);
+
     });
 
+    
+
+    const senderTrigger = screen.getAllByRole('combobox')[0];
+    await user.click(senderTrigger);
+    await waitFor(async () => {
+      const americanOption = screen.getByRole('option', { name: /American/ });
+      await user.click(americanOption);
+    });
+
+    await waitFor(async () => {
+
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+
+      expect(comboboxes.length).toBeGreaterThan(1);
+
+
+    });
+
+
+    
+
+
     const receiverTrigger = screen.getAllByRole('combobox')[1];
-    if (receiverTrigger) await user.click(receiverTrigger);
-    await waitFor(() => {
-      const japaneseOption = screen.getByRole('option', { name: 'Japanese' });
-      if (japaneseOption) user.click(japaneseOption);
+    await user.click(receiverTrigger);
+    await waitFor(async () => {
+      const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
+      await user.click(japaneseOption);
     });
 
     // Submit form
@@ -253,12 +325,22 @@ describe('InterpretationForm', () => {
     await user.click(button);
 
     // Should show loading state
+
+    // Clean up - resolve the promise
+    resolveFunc!({ok: true, json: async () => ({ success: false, error: { message: 'Test' } })});
     await waitFor(() => {
       expect(screen.getByText(/interpreting\.\.\./i)).toBeInTheDocument();
     });
   });
 
   it('should disable form inputs during loading state', async () => {
+    // Mock fetch to delay response so we can check loading state
+    let resolveFunc: (value: any) => void;
+    const fetchPromise = new Promise((resolve) => {
+      resolveFunc = resolve;
+    });
+
+    global.fetch = vi.fn().mockReturnValue(fetchPromise);
     const user = userEvent.setup();
     render(<InterpretationForm />);
 
@@ -268,24 +350,57 @@ describe('InterpretationForm', () => {
     );
     await user.type(textarea, 'Test message');
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
-    if (senderTrigger) await user.click(senderTrigger);
-    await waitFor(() => {
-      const americanOption = screen.getByRole('option', { name: 'American' });
-      if (americanOption) user.click(americanOption);
+    await waitFor(async () => {
+
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+
+      expect(comboboxes.length).toBeGreaterThan(0);
+
+
     });
 
+
+    
+
+
+    const senderTrigger = screen.getAllByRole('combobox')[0];
+    await user.click(senderTrigger);
+    await waitFor(async () => {
+      const americanOption = screen.getByRole('option', { name: /American/ });
+      await user.click(americanOption);
+    });
+
+    await waitFor(async () => {
+
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+
+      expect(comboboxes.length).toBeGreaterThan(1);
+
+
+    });
+
+
+    
+
+
     const receiverTrigger = screen.getAllByRole('combobox')[1];
-    if (receiverTrigger) await user.click(receiverTrigger);
-    await waitFor(() => {
-      const japaneseOption = screen.getByRole('option', { name: 'Japanese' });
-      if (japaneseOption) user.click(japaneseOption);
+    await user.click(receiverTrigger);
+    await waitFor(async () => {
+      const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
+      await user.click(japaneseOption);
     });
 
     const button = screen.getByRole('button', { name: /^interpret$/i });
     await user.click(button);
 
     // Check that textarea and button are disabled during loading
+
+    // Clean up - resolve the promise
+    resolveFunc!({ok: true, json: async () => ({ success: false, error: { message: 'Test' } })});
     await waitFor(() => {
       expect(textarea).toBeDisabled();
       expect(button).toBeDisabled();
@@ -302,27 +417,27 @@ describe('InterpretationForm', () => {
 
     // Check that all 15 cultures are present
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'American' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'British' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'German' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'French' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Japanese' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /American/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /British/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /German/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /French/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Japanese/ })).toBeInTheDocument();
       expect(
-        screen.getByRole('option', { name: 'Chinese (Mandarin)' })
+        screen.getByRole('option', { name: /Chinese.*Mandarin/ })
       ).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Indian' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Spanish' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Italian' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Dutch' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Korean' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Indian/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Spanish/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Italian/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Dutch/ })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Korean/ })).toBeInTheDocument();
       expect(
-        screen.getByRole('option', { name: 'Brazilian Portuguese' })
+        screen.getByRole('option', { name: /Brazilian.*Portuguese/ })
       ).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Mexican' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Mexican/ })).toBeInTheDocument();
       expect(
-        screen.getByRole('option', { name: 'Australian' })
+        screen.getByRole('option', { name: /Australian/ })
       ).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Canadian' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /Canadian/ })).toBeInTheDocument();
     });
   });
 
@@ -337,18 +452,48 @@ describe('InterpretationForm', () => {
     );
     await user.type(textarea, 'Test message');
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
-    if (senderTrigger) await user.click(senderTrigger);
-    await waitFor(() => {
-      const americanOption = screen.getByRole('option', { name: 'American' });
-      if (americanOption) user.click(americanOption);
+    await waitFor(async () => {
+
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+
+      expect(comboboxes.length).toBeGreaterThan(0);
+
+
     });
 
+
+    
+
+
+    const senderTrigger = screen.getAllByRole('combobox')[0];
+    await user.click(senderTrigger);
+    await waitFor(async () => {
+      const americanOption = screen.getByRole('option', { name: /American/ });
+      await user.click(americanOption);
+    });
+
+    await waitFor(async () => {
+
+
+      const comboboxes = screen.getAllByRole('combobox');
+
+
+      expect(comboboxes.length).toBeGreaterThan(1);
+
+
+    });
+
+
+    
+
+
     const receiverTrigger = screen.getAllByRole('combobox')[1];
-    if (receiverTrigger) await user.click(receiverTrigger);
-    await waitFor(() => {
-      const japaneseOption = screen.getByRole('option', { name: 'Japanese' });
-      if (japaneseOption) user.click(japaneseOption);
+    await user.click(receiverTrigger);
+    await waitFor(async () => {
+      const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
+      await user.click(japaneseOption);
     });
 
     // Submit form

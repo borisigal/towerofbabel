@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 
 /**
  * Props for PricingCard component
@@ -37,6 +37,8 @@ export interface PricingCardProps {
   recommended?: boolean;
   /** Whether the card/button should be disabled */
   disabled?: boolean;
+  /** Whether the button is in loading state (shows spinner) */
+  loading?: boolean;
   /** Handler called when CTA button is clicked */
   onCtaClick: () => void;
 }
@@ -72,6 +74,7 @@ export function PricingCard({
   ctaVariant,
   recommended = false,
   disabled = false,
+  loading = false,
   onCtaClick,
 }: PricingCardProps): JSX.Element {
   return (
@@ -79,7 +82,7 @@ export function PricingCard({
       className={`
         relative rounded-lg border p-6 shadow-sm transition-all
         ${recommended ? 'border-blue-600 shadow-blue-100' : 'border-gray-200'}
-        ${disabled ? 'opacity-60' : 'hover:shadow-md'}
+        ${disabled || loading ? 'opacity-60' : 'hover:shadow-md'}
       `}
       role="article"
       aria-label={`${title} pricing tier`}
@@ -120,10 +123,17 @@ export function PricingCard({
         variant={ctaVariant}
         className="w-full"
         onClick={onCtaClick}
-        disabled={disabled}
+        disabled={disabled || loading}
         aria-label={`${ctaText} for ${title} tier`}
       >
-        {ctaText}
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          ctaText
+        )}
       </Button>
     </div>
   );
