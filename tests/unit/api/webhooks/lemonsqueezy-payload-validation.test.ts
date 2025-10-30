@@ -5,15 +5,19 @@ import { getLemonSqueezyConfig } from '@/lib/lemonsqueezy/client';
 import crypto from 'crypto';
 
 vi.mock('@/lib/lemonsqueezy/client');
-vi.mock('@/lib/db/prisma', () => ({
-  prisma: {
+vi.mock('@/lib/db/prisma', () => {
+  const mockPrisma = {
     lemonSqueezyEvent: {
       findUnique: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: 'event-123' }),
     },
     $transaction: vi.fn(),
-  },
-}));
+  };
+  return {
+    default: mockPrisma,
+    prisma: mockPrisma,
+  };
+});
 
 /**
  * Webhook Payload Validation Tests (Task 48)

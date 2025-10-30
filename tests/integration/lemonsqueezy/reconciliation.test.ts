@@ -16,8 +16,8 @@ vi.mock('@lemonsqueezy/lemonsqueezy.js');
 vi.mock('@/lib/lemonsqueezy/client', () => ({
   configureLemonSqueezy: vi.fn()
 }));
-vi.mock('@/lib/db/prisma', () => ({
-  prisma: {
+vi.mock('@/lib/db/prisma', () => {
+  const mockPrisma = {
     subscription: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -25,8 +25,12 @@ vi.mock('@/lib/db/prisma', () => ({
     user: {
       findMany: vi.fn(),
     },
-  },
-}));
+  };
+  return {
+    default: mockPrisma,
+    prisma: mockPrisma,
+  };
+});
 
 /**
  * Payment Reconciliation Tests (Task 54)
@@ -231,12 +235,13 @@ describe('Payment Reconciliation', () => {
         {
           id: 'user-1',
           tier: 'payg',
-          subscriptions: [{
+          subscription: {
             id: 'sub-1',
             lemonsqueezy_subscription_id: 'ls-sub-payg-123',
+            lemonsqueezy_subscription_item_id: 'ls-item-123',
             tier: 'payg',
             status: 'active'
-          }],
+          },
           interpretations: new Array(10).fill({})  // 10 interpretations
         }
       ]);
@@ -300,12 +305,13 @@ describe('Payment Reconciliation', () => {
         {
           id: 'user-1',
           tier: 'payg',
-          subscriptions: [{
+          subscription: {
             id: 'sub-1',
             lemonsqueezy_subscription_id: 'ls-sub-payg-123',
+            lemonsqueezy_subscription_item_id: 'ls-item-123',
             tier: 'payg',
             status: 'active'
-          }],
+          },
           interpretations: new Array(8).fill({})  // 8 interpretations
         }
       ]);

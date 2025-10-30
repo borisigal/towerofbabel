@@ -617,10 +617,10 @@ describe('Payment Endpoint Authorization Security', () => {
 
       // ASSERT: Should log the unauthorized attempt
       expect(log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Unauthorized'),
         expect.objectContaining({
           endpoint: expect.any(String),
-        }),
-        expect.stringContaining('Unauthorized')
+        })
       );
     });
 
@@ -675,10 +675,10 @@ describe('Payment Endpoint Authorization Security', () => {
 
       // ASSERT: Should log successful operation with user context
       expect(log.info).toHaveBeenCalledWith(
+        expect.any(String),
         expect.objectContaining({
           userId: mockUser.id,
-        }),
-        expect.any(String)
+        })
       );
     });
 

@@ -265,6 +265,12 @@ describe('Customer ID Management', () => {
         tier: 'pro',
       });
 
+      (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: userId,
+        lemonsqueezy_customer_id: customerId,
+        tier: 'payg',
+      });
+
       await prisma.user.update({
         where: { id: userId },
         data: { tier: 'payg' }, // Change tier, NOT customer_id

@@ -6,8 +6,8 @@ import { getLemonSqueezyConfig } from '@/lib/lemonsqueezy/client';
 import crypto from 'crypto';
 
 vi.mock('@/lib/lemonsqueezy/client');
-vi.mock('@/lib/db/prisma', () => ({
-  prisma: {
+vi.mock('@/lib/db/prisma', () => {
+  const mockPrisma = {
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
@@ -28,8 +28,12 @@ vi.mock('@/lib/db/prisma', () => ({
       count: vi.fn(),
     },
     $transaction: vi.fn(),
-  },
-}));
+  };
+  return {
+    default: mockPrisma,
+    prisma: mockPrisma,
+  };
+});
 
 /**
  * Subscription Reactivation Tests (Task 49)

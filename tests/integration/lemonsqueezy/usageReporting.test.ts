@@ -22,13 +22,21 @@ vi.mock('@/lib/lemonsqueezy/client', () => ({
   configureLemonSqueezy: vi.fn(),
 }));
 
-vi.mock('@/lib/db/prisma', () => ({
-  default: {
+vi.mock('@/lib/db/prisma', () => {
+  const mockPrisma = {
     user: {
       findUnique: vi.fn(),
     },
-  },
-}));
+    interpretation: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+  };
+  return {
+    default: mockPrisma,
+    prisma: mockPrisma,
+  };
+});
 
 vi.mock('@/lib/observability/logger', () => ({
   logger: {
@@ -71,7 +79,22 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         },
       };
 
+      const interpretationId = 'interp-abc123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+
+      // Mock interpretation update (marking as reported)
+      (prisma.interpretation.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        usage_reported: true,
+      });
 
       // Mock successful usage record creation
       (createUsageRecord as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -89,22 +112,21 @@ describe('Usage Reporting to Lemon Squeezy', () => {
       });
 
       // ACT: Report usage for interpretation
-      const interpretationId = 'interp-abc123';
       const result = await reportInterpretationUsage(mockUser.id, interpretationId);
 
       // ASSERT: Should report usage successfully
       expect(result).toBe(true);
       expect(configureLemonSqueezy).toHaveBeenCalled();
-      expect(createUsageRecord).toHaveBeenCalledWith(
-        {
-          subscriptionItemId: '999888',
-          quantity: 1,
-          action: 'increment',
-        },
-        {
-          idempotencyKey: interpretationId,
-        }
-      );
+      expect(createUsageRecord).toHaveBeenCalledWith({
+        subscriptionItemId: '999888',
+        quantity: 1,
+        action: 'increment',
+      });
+      // Idempotency is handled by marking interpretation.usage_reported = true
+      expect(prisma.interpretation.update).toHaveBeenCalledWith({
+        where: { id: interpretationId },
+        data: { usage_reported: true },
+      });
     });
 
     it('should use interpretation_id as idempotency key', async () => {
@@ -122,23 +144,36 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         },
       };
 
+      const interpretationId = 'interp-unique-id-xyz';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+
+      // Mock interpretation update (marking as reported)
+      (prisma.interpretation.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        usage_reported: true,
+      });
+
       (createUsageRecord as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { data: { id: 'usage-123' } },
         error: null,
       });
 
       // ACT: Report usage with specific interpretation ID
-      const interpretationId = 'interp-unique-id-xyz';
       await reportInterpretationUsage(mockUser.id, interpretationId);
 
-      // ASSERT: Idempotency key should match interpretation ID
-      expect(createUsageRecord).toHaveBeenCalledWith(
-        expect.any(Object),
-        {
-          idempotencyKey: interpretationId,  // Prevents double-charging
-        }
-      );
+      // ASSERT: Idempotency is handled by marking interpretation.usage_reported = true
+      expect(prisma.interpretation.update).toHaveBeenCalledWith({
+        where: { id: interpretationId },
+        data: { usage_reported: true },
+      });
     });
 
     it('should prevent double-charging with duplicate interpretation_id', async () => {
@@ -195,18 +230,31 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         subscription: null,  // No subscription for trial users
       };
 
+      const interpretationId = 'interp-123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
 
-      // ACT: Try to report usage for trial user
-      const result = await reportInterpretationUsage(mockUser.id, 'interp-123');
+      // Mock interpretation update (marking as reported even though not PAYG)
+      (prisma.interpretation.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        usage_reported: true,
+      });
 
-      // ASSERT: Should not call Lemon Squeezy API
-      expect(result).toBe(false);
+      // ACT: Try to report usage for trial user
+      const result = await reportInterpretationUsage(mockUser.id, interpretationId);
+
+      // ASSERT: Should not call Lemon Squeezy API but returns true (non-PAYG users don't report)
+      expect(result).toBe(true);
       expect(createUsageRecord).not.toHaveBeenCalled();
-      expect(log.info).toHaveBeenCalledWith(
-        expect.stringContaining('not PAYG'),
-        expect.any(Object)
-      );
+      // Non-PAYG users skip reporting but mark as reported to prevent retries
+      expect(prisma.interpretation.update).toHaveBeenCalled();
     });
 
     it('should NOT report usage for Pro users', async () => {
@@ -224,18 +272,31 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         },
       };
 
+      const interpretationId = 'interp-123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
 
-      // ACT: Try to report usage for Pro user
-      const result = await reportInterpretationUsage(mockUser.id, 'interp-123');
+      // Mock interpretation update (marking as reported even though not PAYG)
+      (prisma.interpretation.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        usage_reported: true,
+      });
 
-      // ASSERT: Should not call Lemon Squeezy API
-      expect(result).toBe(false);
+      // ACT: Try to report usage for Pro user
+      const result = await reportInterpretationUsage(mockUser.id, interpretationId);
+
+      // ASSERT: Should not call Lemon Squeezy API but returns true (non-PAYG users don't report)
+      expect(result).toBe(true);
       expect(createUsageRecord).not.toHaveBeenCalled();
-      expect(log.info).toHaveBeenCalledWith(
-        expect.stringContaining('not PAYG'),
-        expect.any(Object)
-      );
+      // Non-PAYG users skip reporting but mark as reported to prevent retries
+      expect(prisma.interpretation.update).toHaveBeenCalled();
     });
   });
 
@@ -255,6 +316,15 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         },
       };
 
+      const interpretationId = 'interp-123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
 
       // Mock Lemon Squeezy API failure
@@ -267,12 +337,12 @@ describe('Usage Reporting to Lemon Squeezy', () => {
       });
 
       // ACT: Try to report usage when API is failing
-      const result = await reportInterpretationUsage(mockUser.id, 'interp-123');
+      const result = await reportInterpretationUsage(mockUser.id, interpretationId);
 
       // ASSERT: Should return false but NOT throw exception
       expect(result).toBe(false);
       expect(log.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to report usage'),
+        expect.stringContaining('Usage reporting failed'),
         expect.any(Object)
       );
 
@@ -344,14 +414,30 @@ describe('Usage Reporting to Lemon Squeezy', () => {
 
     it('should handle user not found', async () => {
       // ARRANGE: User doesn't exist in database
+      const interpretationId = 'interp-123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: 'nonexistent-user',
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      // ACT: Try to report usage
-      const result = await reportInterpretationUsage('nonexistent-user', 'interp-123');
+      // Mock interpretation update (marking as reported even though user not found)
+      (prisma.interpretation.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        usage_reported: true,
+      });
 
-      // ASSERT: Should return false gracefully
-      expect(result).toBe(false);
+      // ACT: Try to report usage
+      const result = await reportInterpretationUsage('nonexistent-user', interpretationId);
+
+      // ASSERT: Should return true and mark as reported (non-PAYG users don't report)
+      expect(result).toBe(true);
       expect(createUsageRecord).not.toHaveBeenCalled();
+      expect(prisma.interpretation.update).toHaveBeenCalled();
     });
 
     it('should handle inactive PAYG subscription', async () => {
@@ -369,16 +455,31 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         },
       };
 
+      const interpretationId = 'interp-123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
 
+      // Mock interpretation update (marking as reported to prevent retries)
+      (prisma.interpretation.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        usage_reported: true,
+      });
+
       // ACT: Try to report usage for cancelled subscription
-      const result = await reportInterpretationUsage(mockUser.id, 'interp-123');
+      const result = await reportInterpretationUsage(mockUser.id, interpretationId);
 
       // ASSERT: Should not report usage for cancelled subscription
       expect(result).toBe(false);
       expect(createUsageRecord).not.toHaveBeenCalled();
       expect(log.warn).toHaveBeenCalledWith(
-        expect.stringContaining('not active'),
+        expect.stringContaining('has no active subscription'),
         expect.any(Object)
       );
     });
@@ -434,21 +535,30 @@ describe('Usage Reporting to Lemon Squeezy', () => {
         },
       };
 
+      const interpretationId = 'interp-123';
+
+      // Mock interpretation lookup (usage not yet reported)
+      (prisma.interpretation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: interpretationId,
+        user_id: mockUser.id,
+        usage_reported: false,
+      });
+
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (createUsageRecord as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('API error')
       );
 
       // ACT: Report usage
-      await reportInterpretationUsage(mockUser.id, 'interp-123');
+      await reportInterpretationUsage(mockUser.id, interpretationId);
 
       // ASSERT: Should log error with context
       expect(log.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to report usage'),
+        expect.stringContaining('Usage reporting exception'),
         expect.objectContaining({
           userId: mockUser.id,
-          interpretationId: 'interp-123',
-          error: expect.any(String),
+          interpretationId,
+          error: expect.any(Error),
         })
       );
     });

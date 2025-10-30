@@ -271,10 +271,10 @@ describe('Payment Failure Integration Tests', () => {
       expect(response.status).toBe(500);
       expect(data.error.code).toBe('CHECKOUT_CREATION_FAILED');
       expect(log.error).toHaveBeenCalledWith(
+        expect.any(String),
         expect.objectContaining({
           error: expect.any(Object),
-        }),
-        expect.any(String)
+        })
       );
     });
   });
@@ -357,10 +357,10 @@ describe('Payment Failure Integration Tests', () => {
       // ASSERT
       expect(response.status).toBe(200);
       expect(log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('payment failed'),
         expect.objectContaining({
           subscriptionId: '12345',
-        }),
-        expect.stringContaining('payment failed')
+        })
       );
     });
 
@@ -441,10 +441,10 @@ describe('Payment Failure Integration Tests', () => {
       // ASSERT
       expect(response.status).toBe(200);
       expect(log.info).toHaveBeenCalledWith(
+        expect.stringContaining('payment recovered'),
         expect.objectContaining({
           subscriptionId: '12345',
-        }),
-        expect.stringContaining('payment recovered')
+        })
       );
     });
 
