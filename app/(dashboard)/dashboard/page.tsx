@@ -6,6 +6,7 @@ import { DashboardHeader } from '@/components/features/dashboard/DashboardHeader
 import { UsageDisplay } from '@/components/features/dashboard/UsageDisplay';
 import { UsageNotificationBanner } from '@/components/features/dashboard/UsageNotificationBanner';
 import { UsageSyncProvider } from '@/components/features/dashboard/UsageSyncProvider';
+import { BillingReturnHandler } from '@/components/features/dashboard/BillingReturnHandler';
 import { InterpretationForm } from '@/components/features/interpretation/InterpretationForm';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { UpgradeModalProvider } from '@/components/features/upgrade/UpgradeModalProvider';
@@ -85,6 +86,9 @@ async function DashboardContent(): Promise<JSX.Element> {
   // 4. RENDER dashboard with user data from database
   return (
     <UsageSyncProvider>
+      {/* Billing Portal Return Handler - Story 3.5 */}
+      <BillingReturnHandler />
+
       <div>
         {/* Welcome Header */}
         <DashboardHeader name={userRecord.name} email={userRecord.email} />

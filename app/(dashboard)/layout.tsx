@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/auth/supabaseServer';
+import { checkCancelledStatus } from '@/lib/middleware/checkCancelledStatus';
 import { DashboardNav } from '@/components/layout/DashboardNav';
 import { redirect } from 'next/navigation';
 
@@ -7,6 +8,10 @@ import { redirect } from 'next/navigation';
  *
  * Layout for authenticated dashboard pages with navigation.
  * Includes DashboardNav component with usage indicator (Story 3.2).
+ *
+ * CRITICAL SECURITY:
+ * Calls checkCancelledStatus middleware to block cancelled users from ALL dashboard access.
+ * Cancelled users are redirected to subscription-required page (Story 3.5 - AC 8).
  *
  * Server Component - Fetches user data server-side to pass to DashboardNav.
  * Responsive container with proper padding across breakpoints.
@@ -23,6 +28,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }): Promise<JSX.Element> {
+  // CRITICAL: Check cancelled status on EVERY dashboard page load
+  // Blocks cancelled users from ALL dashboard access (financially sensitive)
+  await checkCancelledStatus();
+
   // Get user data for DashboardNav
   const supabase = createClient();
   const {

@@ -339,3 +339,65 @@ export async function linkLemonSqueezyCustomer(
 export async function getUserCount(): Promise<number> {
   return executeWithCircuitBreaker(() => prisma.user.count());
 }
+
+/**
+ * Finds a user by ID with subscription data for billing management.
+ *
+ * Returns user tier, customer ID, and active subscription information.
+ * Used by account settings page to display billing section.
+ *
+ * CRITICAL: This is the source of truth for tier/usage (NOT JWT app_metadata).
+ *
+ * @param userId - User UUID (matches Supabase Auth user ID)
+ * @returns User record with billing fields and subscription, or null if not found
+ *
+ * @example
+ * ```typescript
+ * const user = await findUserWithBilling('user-123');
+ * if (!user?.lemonsqueezy_customer_id) {
+ *   return 'No billing information yet';
+ * }
+ * ```
+ */
+export async function findUserWithBilling(userId: string): Promise<{
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  messages_used_count: number;
+  messages_reset_date: Date | null;
+  lemonsqueezy_customer_id: string | null;
+  subscription: {
+    id: string;
+    status: string;
+    tier: string;
+    renews_at: Date | null;
+    ends_at: Date | null;
+    created_at: Date;
+  } | null;
+} | null> {
+  return executeWithCircuitBreaker(() =>
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        tier: true,
+        messages_used_count: true,
+        messages_reset_date: true,
+        lemonsqueezy_customer_id: true,
+        subscription: {
+          select: {
+            id: true,
+            status: true,
+            tier: true,
+            renews_at: true,
+            ends_at: true,
+            created_at: true,
+          },
+        },
+      },
+    })
+  );
+}

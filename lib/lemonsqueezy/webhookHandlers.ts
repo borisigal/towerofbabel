@@ -141,7 +141,15 @@ export async function handleSubscriptionUpdated(data: LemonSqueezyWebhookData, t
 
 /**
  * Handle subscription_cancelled webhook event
- * Updates subscription status and sets user tier to trial after cancellation
+ *
+ * CRITICAL - FINANCIALLY SENSITIVE:
+ * Sets user tier to 'cancelled' which BLOCKS all dashboard access.
+ * Cancelled users cannot interpret, view dashboard, or access settings.
+ * Must reactivate subscription to regain access.
+ *
+ * **Security Requirement:** Cancelled = NO ACCESS (not trial with 10 free messages)
+ *
+ * @see Story 3.5 - AC 7: CRITICAL - FINANCIALLY SENSITIVE
  */
 export async function handleSubscriptionCancelled(data: LemonSqueezyWebhookData, tx: PrismaTransaction): Promise<void> {
   const subscriptionId = data.id?.toString() || 'unknown';
@@ -154,7 +162,10 @@ export async function handleSubscriptionCancelled(data: LemonSqueezyWebhookData,
   });
 
   if (!subscription) {
-    console.error(`Subscription not found for cancellation: ${subscriptionId}`);
+    log.error(
+      'Subscription not found for cancellation',
+      { subscriptionId, eventType: 'subscription_cancelled' }
+    );
     return;
   }
 
@@ -165,20 +176,31 @@ export async function handleSubscriptionCancelled(data: LemonSqueezyWebhookData,
     },
     data: {
       status: 'cancelled',
-      ends_at: data.attributes?.ends_at ? new Date(data.attributes.ends_at) : null
+      ends_at: data.attributes?.ends_at ? new Date(data.attributes.ends_at) : new Date()
     }
   });
 
-  // If subscription is immediately expired (no remaining time), downgrade user to trial
-  if (data.attributes?.status === 'expired' || (data.attributes?.ends_at && new Date(data.attributes.ends_at) <= new Date())) {
-    await tx.user.update({
-      where: { id: subscription.user_id },
-      data: {
-        tier: 'trial',
-        messages_reset_date: null
-      }
-    });
-  }
+  // CRITICAL: Set user tier to 'cancelled' (NOT 'trial', NOT 'payg')
+  // This blocks ALL dashboard access per financially sensitive security requirement
+  await tx.user.update({
+    where: { id: subscription.user_id },
+    data: {
+      tier: 'cancelled',
+      messages_reset_date: null
+    }
+  });
+
+  // SECURITY AUDIT LOG
+  log.warn(
+    'Subscription cancelled - user access revoked',
+    {
+      userId: subscription.user_id,
+      subscriptionId,
+      tier: 'cancelled',
+      security: 'access_revoked',
+      eventType: 'subscription_cancelled'
+    }
+  );
 }
 
 /**

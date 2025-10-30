@@ -1,4 +1,4 @@
-import { lemonSqueezySetup } from '@lemonsqueezy/lemonsqueezy.js';
+import { lemonSqueezySetup, getCustomer } from '@lemonsqueezy/lemonsqueezy.js';
 
 /**
  * Helper to get environment variable and trim whitespace
@@ -92,4 +92,45 @@ export function getLemonSqueezyConfig(): {
     webhookSecret: string;
     isTestMode: boolean;
   };
+}
+
+/**
+ * Generate Customer Portal URL for user to manage billing.
+ *
+ * Creates a temporary portal URL (expires in 24 hours) that allows users to:
+ * - View billing history and invoices
+ * - Update payment method
+ * - Cancel subscription
+ * - Download receipts
+ *
+ * CRITICAL: Portal URL expires in 24 hours - generate new URL each time user requests access.
+ *
+ * @param customerId - Lemon Squeezy customer ID (from user.lemonsqueezy_customer_id)
+ * @returns Promise resolving to portal URL
+ *
+ * @throws {Error} if customer ID is invalid or API call fails
+ *
+ * @example
+ * ```typescript
+ * const portalUrl = await getCustomerPortalUrl(user.lemonsqueezy_customer_id);
+ * // Redirect user to portalUrl
+ * window.location.href = portalUrl;
+ * ```
+ *
+ * @see https://docs.lemonsqueezy.com/api/customer-portal
+ */
+export async function getCustomerPortalUrl(customerId: string): Promise<string> {
+  configureLemonSqueezy();
+
+  const result = await getCustomer(customerId);
+
+  if (result.error) {
+    throw new Error(`Failed to get customer portal: ${result.error.message}`);
+  }
+
+  if (!result.data?.data?.attributes?.urls?.customer_portal) {
+    throw new Error('Customer portal URL not available for this customer');
+  }
+
+  return result.data.data.attributes.urls.customer_portal;
 }

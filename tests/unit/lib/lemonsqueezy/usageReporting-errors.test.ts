@@ -23,6 +23,11 @@ vi.mock('@/lib/observability/logger', () => ({
     error: vi.fn(),
     warn: vi.fn(),
   },
+  log: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+  },
 }));
 
 import prisma from '@/lib/db/prisma';

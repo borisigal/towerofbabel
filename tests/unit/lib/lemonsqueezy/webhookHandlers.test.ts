@@ -269,14 +269,15 @@ describe('Lemon Squeezy Webhook Handlers', () => {
   });
 
   describe('handleSubscriptionCancelled', () => {
-    describe('3.4-UNIT-025: subscription_cancelled webhook downgrades to trial', () => {
-      it('should downgrade user to trial when subscription is immediately expired', async () => {
+    describe('3.5-UNIT-CRITICAL: subscription_cancelled BLOCKS access with tier=cancelled', () => {
+      it('CRITICAL: should set tier to CANCELLED (not trial) when subscription cancelled', async () => {
+        // CRITICAL SECURITY: Cancelled users must have tier='cancelled' to block ALL access
         // Arrange
         const webhookData = {
           id: 'sub-123',
           attributes: {
-            status: 'expired',
-            ends_at: new Date().toISOString(), // Already expired
+            status: 'cancelled',
+            ends_at: new Date().toISOString(),
           },
         };
 
@@ -288,7 +289,7 @@ describe('Lemon Squeezy Webhook Handlers', () => {
         // Act
         await handleSubscriptionCancelled(webhookData, mockPrismaTransaction);
 
-        // Assert
+        // Assert - Subscription updated
         expect(mockPrismaTransaction.subscription.update).toHaveBeenCalledWith({
           where: { lemonsqueezy_subscription_id: 'sub-123' },
           data: {
@@ -297,17 +298,18 @@ describe('Lemon Squeezy Webhook Handlers', () => {
           },
         });
 
+        // Assert - User tier set to 'cancelled' (CRITICAL)
         expect(mockPrismaTransaction.user.update).toHaveBeenCalledWith({
           where: { id: 'user-999' },
           data: {
-            tier: 'trial',
+            tier: 'cancelled', // CRITICAL: Must be 'cancelled', NOT 'trial'
             messages_reset_date: null,
           },
         });
       });
 
-      it('should not downgrade user if subscription has remaining time', async () => {
-        // Arrange
+      it('CRITICAL: should ALWAYS set tier to cancelled regardless of remaining time', async () => {
+        // CRITICAL: Even if subscription has time left, user access is revoked immediately
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + 7); // 7 days from now
 
@@ -315,7 +317,7 @@ describe('Lemon Squeezy Webhook Handlers', () => {
           id: 'sub-123',
           attributes: {
             status: 'active',
-            ends_at: futureDate.toISOString(), // Still has time left
+            ends_at: futureDate.toISOString(), // Has time left, but cancelled
           },
         };
 
@@ -327,8 +329,32 @@ describe('Lemon Squeezy Webhook Handlers', () => {
         // Act
         await handleSubscriptionCancelled(webhookData, mockPrismaTransaction);
 
-        // Assert
-        expect(mockPrismaTransaction.subscription.update).toHaveBeenCalled();
+        // Assert - User IMMEDIATELY set to cancelled
+        expect(mockPrismaTransaction.user.update).toHaveBeenCalledWith({
+          where: { id: 'user-999' },
+          data: {
+            tier: 'cancelled', // CRITICAL: Immediate access revocation
+            messages_reset_date: null,
+          },
+        });
+      });
+
+      it('should handle subscription not found gracefully', async () => {
+        const webhookData = {
+          id: 'sub-nonexistent',
+          attributes: {
+            status: 'cancelled',
+          },
+        };
+
+        mockPrismaTransaction.subscription.findUnique.mockResolvedValue(null);
+
+        // Should not throw error
+        await expect(
+          handleSubscriptionCancelled(webhookData, mockPrismaTransaction)
+        ).resolves.toBeUndefined();
+
+        // Should not attempt to update user
         expect(mockPrismaTransaction.user.update).not.toHaveBeenCalled();
       });
     });
@@ -416,18 +442,22 @@ describe('Lemon Squeezy Webhook Handlers', () => {
 
       mockPrismaTransaction.subscription.findUnique.mockResolvedValue(null);
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      // Mock logger to spy on error calls
+      const mockLog = await import('@/lib/observability/logger');
+      const logErrorSpy = vi.spyOn(mockLog.log, 'error');
 
       // Act
       await handleSubscriptionExpired(webhookData, mockPrismaTransaction);
 
       // Assert
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Subscription not found for expiration: sub-999')
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        'Subscription not found for expiration',
+        expect.objectContaining({
+          subscriptionId: 'sub-999',
+          eventType: 'subscription_expired',
+        })
       );
       expect(mockPrismaTransaction.user.update).not.toHaveBeenCalled();
-
-      consoleErrorSpy.mockRestore();
     });
   });
 });
