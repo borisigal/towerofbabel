@@ -358,17 +358,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ============================================
-    // 7. BUSINESS LOGIC (LLM Interpretation)
+    // 7. BUSINESS LOGIC (LLM Interpretation/Optimization)
     // ============================================
     const llmProvider = createLLMProvider();
     const sameCulture = body.sender_culture === body.receiver_culture;
 
-    const result = await llmProvider.interpret({
-      message: body.message,
-      senderCulture: body.sender_culture as CultureCode,
-      receiverCulture: body.receiver_culture as CultureCode,
-      sameCulture,
-    });
+    const result = await llmProvider.interpret(
+      {
+        message: body.message,
+        senderCulture: body.sender_culture as CultureCode,
+        receiverCulture: body.receiver_culture as CultureCode,
+        sameCulture,
+      },
+      body.mode as 'inbound' | 'outbound'
+    );
 
     // ============================================
     // 8. COST TRACKING - CRITICAL (Immediate)

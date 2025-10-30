@@ -4,11 +4,16 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { generateInterpretationPrompt } from './prompts';
+import {
+  generateInterpretationPrompt,
+  generateOutboundOptimizationPrompt,
+} from './prompts';
 import {
   LLMAdapter,
   LLMInterpretationRequest,
-  LLMInterpretationResponse,
+  InboundInterpretationResponse,
+  OutboundInterpretationResponse,
+  InterpretationResponse,
   LLMMetadata,
   LLMEmotion,
 } from './types';
@@ -42,17 +47,19 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * Parses and validates LLM response JSON.
- * Handles markdown code blocks and validates structure.
+ * Handles markdown code blocks and validates structure based on mode.
  *
  * @param rawResponse - Raw text response from Claude
+ * @param mode - Interpretation mode: 'inbound' or 'outbound'
  * @param sameCulture - Whether interpretation is same-culture (affects validation)
  * @returns Validated interpretation response
  * @throws {LLMParsingError} If response cannot be parsed or is invalid
  */
 function parseInterpretationResponse(
   rawResponse: string,
+  mode: 'inbound' | 'outbound',
   sameCulture: boolean
-): LLMInterpretationResponse {
+): InterpretationResponse {
   // Step 1: Extract JSON from markdown code blocks if present
   let jsonString = rawResponse.trim();
   const codeBlockMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -76,7 +83,27 @@ function parseInterpretationResponse(
     throw new LLMParsingError('Response is not an object', { parsed });
   }
 
-  // Step 4: Validate required fields
+  // Step 4: Route to appropriate validation function
+  if (mode === 'inbound') {
+    return validateInboundResponse(parsed, sameCulture);
+  } else {
+    return validateOutboundResponse(parsed, sameCulture);
+  }
+}
+
+/**
+ * Validates inbound interpretation response structure.
+ *
+ * @param parsed - Parsed JSON response
+ * @param sameCulture - Whether sender and receiver share the same culture
+ * @returns Validated inbound interpretation response
+ * @throws {LLMParsingError} If response format is invalid
+ */
+function validateInboundResponse(
+  parsed: Record<string, unknown>,
+  sameCulture: boolean
+): InboundInterpretationResponse {
+  // Validate required fields
   if (typeof parsed.bottomLine !== 'string' || parsed.bottomLine.trim() === '') {
     throw new LLMParsingError('Missing or empty bottomLine field', { parsed });
   }
@@ -94,75 +121,172 @@ function parseInterpretationResponse(
     throw new LLMParsingError('Missing or empty emotions array', { parsed });
   }
 
-  // Step 5: Validate emotions
-  const emotions: LLMEmotion[] = (parsed.emotions as unknown[]).map(
-    (emotion: unknown, index: number) => {
-      if (!isObject(emotion)) {
-        throw new LLMParsingError(`Emotion at index ${index} is not an object`, {
-          emotion,
-        });
-      }
-
-      if (typeof emotion.name !== 'string' || emotion.name.trim() === '') {
-        throw new LLMParsingError(`Emotion at index ${index} missing name`, {
-          emotion,
-        });
-      }
-
-      if (
-        typeof emotion.senderScore !== 'number' ||
-        emotion.senderScore < 0 ||
-        emotion.senderScore > 10
-      ) {
-        throw new LLMParsingError(
-          `Emotion at index ${index} has invalid senderScore`,
-          { emotion }
-        );
-      }
-
-      // receiverScore is required for cross-culture, optional for same-culture
-      if (!sameCulture) {
-        if (
-          typeof emotion.receiverScore !== 'number' ||
-          emotion.receiverScore < 0 ||
-          emotion.receiverScore > 10
-        ) {
-          throw new LLMParsingError(
-            `Emotion at index ${index} has invalid receiverScore (required for cross-culture)`,
-            { emotion }
-          );
-        }
-      } else if (emotion.receiverScore !== undefined) {
-        if (
-          typeof emotion.receiverScore !== 'number' ||
-          emotion.receiverScore < 0 ||
-          emotion.receiverScore > 10
-        ) {
-          throw new LLMParsingError(
-            `Emotion at index ${index} has invalid receiverScore`,
-            { emotion }
-          );
-        }
-      }
-
-      return {
-        name: emotion.name,
-        senderScore: emotion.senderScore,
-        receiverScore: emotion.receiverScore,
-        explanation:
-          typeof emotion.explanation === 'string'
-            ? emotion.explanation
-            : undefined,
-      };
-    }
+  // Validate emotions
+  const emotions: LLMEmotion[] = validateEmotions(
+    parsed.emotions,
+    sameCulture
   );
 
-  // Step 6: Return validated response (ensure only top 3 emotions)
   return {
     bottomLine: parsed.bottomLine,
     culturalContext: parsed.culturalContext,
     emotions: emotions.slice(0, 3),
   };
+}
+
+/**
+ * Validates outbound optimization response structure.
+ *
+ * @param parsed - Parsed JSON response
+ * @param sameCulture - Whether sender and receiver share the same culture
+ * @returns Validated outbound interpretation response
+ * @throws {LLMParsingError} If response format is invalid
+ */
+function validateOutboundResponse(
+  parsed: Record<string, unknown>,
+  sameCulture: boolean
+): OutboundInterpretationResponse {
+  // Validate originalAnalysis
+  if (
+    typeof parsed.originalAnalysis !== 'string' ||
+    parsed.originalAnalysis.trim() === ''
+  ) {
+    throw new LLMParsingError(
+      'Missing or invalid originalAnalysis field in outbound response',
+      { parsed }
+    );
+  }
+
+  // Validate suggestions array
+  if (!Array.isArray(parsed.suggestions)) {
+    throw new LLMParsingError(
+      'Missing or invalid suggestions array in outbound response',
+      { parsed }
+    );
+  }
+
+  if (parsed.suggestions.length < 3 || parsed.suggestions.length > 5) {
+    throw new LLMParsingError('Suggestions array must contain 3-5 items', {
+      parsed,
+      suggestionsCount: parsed.suggestions.length,
+    });
+  }
+
+  for (let i = 0; i < parsed.suggestions.length; i++) {
+    const suggestion = parsed.suggestions[i];
+    if (typeof suggestion !== 'string' || suggestion.trim() === '') {
+      throw new LLMParsingError(
+        `Suggestion at index ${i} must be a non-empty string`,
+        { suggestion }
+      );
+    }
+  }
+
+  // Validate optimizedMessage
+  if (
+    typeof parsed.optimizedMessage !== 'string' ||
+    parsed.optimizedMessage.trim() === ''
+  ) {
+    throw new LLMParsingError(
+      'Missing or invalid optimizedMessage field in outbound response',
+      { parsed }
+    );
+  }
+
+  // Validate emotions array
+  if (!Array.isArray(parsed.emotions) || parsed.emotions.length === 0) {
+    throw new LLMParsingError(
+      'Missing or empty emotions array in outbound response',
+      { parsed }
+    );
+  }
+
+  // Validate emotions
+  const emotions: LLMEmotion[] = validateEmotions(
+    parsed.emotions,
+    sameCulture
+  );
+
+  return {
+    originalAnalysis: parsed.originalAnalysis,
+    suggestions: parsed.suggestions as string[],
+    optimizedMessage: parsed.optimizedMessage,
+    emotions: emotions.slice(0, 3),
+  };
+}
+
+/**
+ * Validates emotions array structure.
+ * Shared by both inbound and outbound validation.
+ *
+ * @param emotions - Array of emotion objects to validate
+ * @param sameCulture - Whether sender and receiver share the same culture
+ * @returns Validated emotions array
+ * @throws {LLMParsingError} If emotions format is invalid
+ */
+function validateEmotions(
+  emotions: unknown[],
+  sameCulture: boolean
+): LLMEmotion[] {
+  return emotions.map((emotion: unknown, index: number) => {
+    if (!isObject(emotion)) {
+      throw new LLMParsingError(`Emotion at index ${index} is not an object`, {
+        emotion,
+      });
+    }
+
+    if (typeof emotion.name !== 'string' || emotion.name.trim() === '') {
+      throw new LLMParsingError(`Emotion at index ${index} missing name`, {
+        emotion,
+      });
+    }
+
+    if (
+      typeof emotion.senderScore !== 'number' ||
+      emotion.senderScore < 0 ||
+      emotion.senderScore > 10
+    ) {
+      throw new LLMParsingError(
+        `Emotion at index ${index} has invalid senderScore`,
+        { emotion }
+      );
+    }
+
+    // receiverScore is required for cross-culture, optional for same-culture
+    if (!sameCulture) {
+      if (
+        typeof emotion.receiverScore !== 'number' ||
+        emotion.receiverScore < 0 ||
+        emotion.receiverScore > 10
+      ) {
+        throw new LLMParsingError(
+          `Emotion at index ${index} has invalid receiverScore (required for cross-culture)`,
+          { emotion }
+        );
+      }
+    } else if (emotion.receiverScore !== undefined) {
+      if (
+        typeof emotion.receiverScore !== 'number' ||
+        emotion.receiverScore < 0 ||
+        emotion.receiverScore > 10
+      ) {
+        throw new LLMParsingError(
+          `Emotion at index ${index} has invalid receiverScore`,
+          { emotion }
+        );
+      }
+    }
+
+    return {
+      name: emotion.name,
+      senderScore: emotion.senderScore,
+      receiverScore: emotion.receiverScore,
+      explanation:
+        typeof emotion.explanation === 'string'
+          ? emotion.explanation
+          : undefined,
+    };
+  });
 }
 
 /**
@@ -216,10 +340,11 @@ export class AnthropicAdapter implements LLMAdapter {
   }
 
   /**
-   * Interprets a message using Claude Sonnet 4.5.
+   * Interprets a message using Claude Sonnet 4.5 or optimizes outbound message.
    * Handles prompt generation, API call, response parsing, and error handling.
    *
    * @param request - Interpretation request with message and culture context
+   * @param mode - Interpretation mode: 'inbound' or 'outbound'
    * @returns Promise resolving to interpretation and metadata
    * @throws {LLMTimeoutError} If request exceeds 10 seconds
    * @throws {LLMRateLimitError} If rate limit exceeded (429)
@@ -227,27 +352,39 @@ export class AnthropicAdapter implements LLMAdapter {
    * @throws {LLMParsingError} If response cannot be parsed
    * @throws {LLMProviderError} For other API errors
    */
-  async interpret(request: LLMInterpretationRequest): Promise<{
-    interpretation: LLMInterpretationResponse;
+  async interpret(
+    request: LLMInterpretationRequest,
+    mode: 'inbound' | 'outbound' = 'inbound'
+  ): Promise<{
+    interpretation: InterpretationResponse;
     metadata: LLMMetadata;
   }> {
     const startTime = Date.now();
 
-    // Generate prompt
-    const prompt = generateInterpretationPrompt(
-      request.message,
-      request.senderCulture,
-      request.receiverCulture,
-      request.sameCulture
-    );
+    // Generate prompt based on mode
+    const prompt =
+      mode === 'inbound'
+        ? generateInterpretationPrompt(
+            request.message,
+            request.senderCulture,
+            request.receiverCulture,
+            request.sameCulture
+          )
+        : generateOutboundOptimizationPrompt(
+            request.message,
+            request.senderCulture,
+            request.receiverCulture,
+            request.sameCulture
+          );
 
     // Log before LLM call
     logger.info({
       timestamp: new Date().toISOString(),
+      mode,
       culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
       characterCount: request.message.length,
       sameCulture: request.sameCulture,
-    }, 'Calling Claude for interpretation');
+    }, `Calling Claude for ${mode} processing`);
 
     try {
       // Create abort controller for timeout
@@ -288,9 +425,10 @@ export class AnthropicAdapter implements LLMAdapter {
 
       const rawResponse = content.text;
 
-      // Parse and validate response
+      // Parse and validate response based on mode
       const interpretation = parseInterpretationResponse(
         rawResponse,
+        mode,
         request.sameCulture
       );
 

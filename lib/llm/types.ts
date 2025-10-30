@@ -21,10 +21,10 @@ export interface LLMInterpretationRequest {
 }
 
 /**
- * Response from LLM interpretation.
+ * Response from LLM inbound interpretation.
  * Contains interpretation insights and detected emotions.
  */
-export interface LLMInterpretationResponse {
+export interface InboundInterpretationResponse {
   /** Simple explanation of what the message really means (2-3 sentences) */
   bottomLine: string;
   /** Cultural context and communication insights (2-4 sentences) */
@@ -32,6 +32,35 @@ export interface LLMInterpretationResponse {
   /** Top 3 emotions detected in the message */
   emotions: LLMEmotion[];
 }
+
+/**
+ * Response from LLM outbound optimization.
+ * Contains optimization suggestions and improved message version.
+ */
+export interface OutboundInterpretationResponse {
+  /** How the message will be perceived by the receiver (2-3 sentences) */
+  originalAnalysis: string;
+  /** List of 3-5 specific improvements to make */
+  suggestions: string[];
+  /** Culturally optimized version of the message */
+  optimizedMessage: string;
+  /** Top 3 emotions detected in the original message */
+  emotions: LLMEmotion[];
+}
+
+/**
+ * Union type for interpretation responses.
+ * Can be either inbound interpretation or outbound optimization.
+ */
+export type InterpretationResponse =
+  | InboundInterpretationResponse
+  | OutboundInterpretationResponse;
+
+/**
+ * @deprecated Use InboundInterpretationResponse instead
+ * Legacy type alias for backward compatibility.
+ */
+export type LLMInterpretationResponse = InboundInterpretationResponse;
 
 /**
  * Emotion detected by LLM with intensity scores.
@@ -74,7 +103,8 @@ export interface LLMMetadata {
  *   message: 'I appreciate your hard work on this project.',
  *   senderCulture: 'american',
  *   receiverCulture: 'japanese',
- *   sameCulture: false
+ *   sameCulture: false,
+ *   mode: 'inbound'
  * });
  * console.log(result.interpretation.bottomLine);
  * console.log(`Cost: $${result.metadata.costUsd}`);
@@ -82,9 +112,10 @@ export interface LLMMetadata {
  */
 export interface LLMAdapter {
   /**
-   * Interprets a message in its cultural context.
+   * Interprets a message in its cultural context or optimizes outbound message.
    *
    * @param request - Interpretation request with message and culture context
+   * @param mode - Interpretation mode: 'inbound' (analyze received message) or 'outbound' (optimize message to send)
    * @returns Promise resolving to interpretation and metadata
    * @throws {LLMTimeoutError} If request exceeds timeout
    * @throws {LLMRateLimitError} If rate limit exceeded
@@ -92,8 +123,11 @@ export interface LLMAdapter {
    * @throws {LLMParsingError} If response cannot be parsed
    * @throws {LLMProviderError} For other provider errors
    */
-  interpret(request: LLMInterpretationRequest): Promise<{
-    interpretation: LLMInterpretationResponse;
+  interpret(
+    request: LLMInterpretationRequest,
+    mode: 'inbound' | 'outbound'
+  ): Promise<{
+    interpretation: InterpretationResponse;
     metadata: LLMMetadata;
   }>;
 }
