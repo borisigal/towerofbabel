@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CultureSelector } from './CultureSelector';
 import { InterpretationResult } from './InterpretationResult';
 import { type CultureCode, type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
@@ -21,8 +22,15 @@ import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
 import { log } from '@/lib/observability/logger';
 
 /**
+ * Interpretation mode type.
+ * - inbound: Analyze received messages (default)
+ * - outbound: Optimize messages to send
+ */
+type InterpretationMode = 'inbound' | 'outbound';
+
+/**
  * Form data structure for interpretation request.
- * Matches InterpretationRequest type from models.ts (mode is fixed to 'inbound').
+ * Matches InterpretationRequest type from models.ts.
  */
 interface InterpretationFormData {
   message: string;
@@ -34,19 +42,22 @@ interface InterpretationFormData {
  * Main interpretation form component for dashboard.
  *
  * Features:
+ * - Mode toggle for inbound/outbound interpretation (Story 4.1)
  * - Large textarea for message input (max 2000 characters)
  * - Real-time character counter with warning state
  * - Two culture selector dropdowns (sender/receiver)
+ * - Dynamic labels based on mode (inbound/outbound)
  * - Form validation (message length, culture selection)
  * - Loading state during submission
  * - Fully responsive design (mobile, tablet, desktop)
  * - WCAG 2.1 AA accessible (keyboard navigation, screen reader support)
  * - Integrated with /api/interpret endpoint (Story 2.3)
- * - Displays results via alert (temporary until Story 2.4)
+ * - Mode persistence via sessionStorage (Story 4.1)
  *
  * Story 2.1: UI created
  * Story 2.3: Integrated with API endpoint
- * Story 2.4: Will add proper result display UI
+ * Story 2.4: Added proper result display UI
+ * Story 4.1: Added mode toggle (inbound/outbound)
  */
 export function InterpretationForm(): JSX.Element {
   const router = useRouter();
@@ -56,6 +67,22 @@ export function InterpretationForm(): JSX.Element {
   const [result, setResult] = useState<InterpretationResultType | null>(null);
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+
+  // Mode state with sessionStorage persistence (Story 4.1)
+  const [mode, setMode] = useState<InterpretationMode>('inbound');
+
+  // Restore mode from sessionStorage on mount
+  useEffect(() => {
+    const storedMode = sessionStorage.getItem('interpretation-mode') as InterpretationMode | null;
+    if (storedMode === 'inbound' || storedMode === 'outbound') {
+      setMode(storedMode);
+    }
+  }, []);
+
+  // Persist mode to sessionStorage on change
+  useEffect(() => {
+    sessionStorage.setItem('interpretation-mode', mode);
+  }, [mode]);
 
   const {
     register,
@@ -87,9 +114,29 @@ export function InterpretationForm(): JSX.Element {
     senderCulture !== '' &&
     receiverCulture !== '';
 
+  // Dynamic labels based on mode (Story 4.1)
+  const textareaPlaceholder = mode === 'inbound'
+    ? 'Paste the message you want to interpret...'
+    : 'Paste the message you want to send...';
+
+  const senderLabel = mode === 'inbound'
+    ? "Sender's Culture"
+    : "Your Culture";
+
+  const receiverLabel = "Receiver's Culture"; // Same for both modes
+
+  const submitButtonLabel = mode === 'inbound'
+    ? 'Interpret'
+    : 'Optimize';
+
+  const loadingButtonLabel = mode === 'inbound'
+    ? 'Interpreting...'
+    : 'Optimizing...';
+
   /**
    * Form submission handler.
    * Calls /api/interpret endpoint with form data.
+   * Includes mode parameter (inbound|outbound) - Story 4.1.
    */
   const onSubmit = async (data: InterpretationFormData): Promise<void> => {
     if (!isFormValid) return;
@@ -104,7 +151,7 @@ export function InterpretationForm(): JSX.Element {
         messageLength: data.message.length,
         sender_culture: data.sender_culture,
         receiver_culture: data.receiver_culture,
-        mode: 'inbound',
+        mode: mode,
       });
 
       const response = await fetch('/api/interpret', {
@@ -114,7 +161,7 @@ export function InterpretationForm(): JSX.Element {
           message: data.message,
           sender_culture: data.sender_culture,
           receiver_culture: data.receiver_culture,
-          mode: 'inbound',
+          mode: mode,
         }),
       });
 
@@ -136,6 +183,7 @@ export function InterpretationForm(): JSX.Element {
 
       if (responseData.success) {
         log.info('Interpretation successful', {
+          mode: mode,
           messagesRemaining: responseData.metadata?.messages_remaining
         });
 
@@ -164,6 +212,7 @@ export function InterpretationForm(): JSX.Element {
       }
     } catch (error) {
       log.error('Interpretation request failed', {
+        mode: mode,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       setError('Network error. Please check your connection and try again.');
@@ -175,21 +224,37 @@ export function InterpretationForm(): JSX.Element {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
+        {/* Mode Toggle - Story 4.1 */}
+        <Tabs
+          value={mode}
+          onValueChange={(value) => setMode(value as InterpretationMode)}
+          className="mb-6"
+        >
+          <TabsList className="grid w-full grid-cols-2 h-11" aria-label="Interpretation mode toggle">
+            <TabsTrigger value="inbound" className="min-h-[44px]">
+              Inbound
+            </TabsTrigger>
+            <TabsTrigger value="outbound" className="min-h-[44px]">
+              Outbound
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <h2 className="text-2xl font-semibold mb-6 text-foreground">
-          Interpret Message
+          {mode === 'inbound' ? 'Interpret Message' : 'Optimize Message'}
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Message Textarea with Character Counter */}
           <div className="space-y-2">
             <Label htmlFor="message" className="text-base font-medium">
-              Message to Interpret
+              Message to {mode === 'inbound' ? 'Interpret' : 'Optimize'}
             </Label>
             <Textarea
               id="message"
-              placeholder="Paste the message you want to interpret..."
+              placeholder={textareaPlaceholder}
               className="min-h-[150px] sm:min-h-[200px] resize-none"
-              aria-label="Message to interpret"
+              aria-label={`Message to ${mode === 'inbound' ? 'interpret' : 'optimize'}`}
               aria-describedby="character-counter"
               disabled={isLoading}
               {...register('message', {
@@ -226,15 +291,15 @@ export function InterpretationForm(): JSX.Element {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 space-y-2">
               <Label htmlFor="sender-culture" className="text-base font-medium">
-                Sender&apos;s Culture
+                {senderLabel}
               </Label>
               <CultureSelector
                 id="sender-culture"
                 value={senderCulture as CultureCode}
                 onChange={(value) => setValue('sender_culture', value)}
                 disabled={isLoading}
-                aria-label="Sender's culture"
-                placeholder="Select sender's culture"
+                aria-label={senderLabel}
+                placeholder={`Select ${mode === 'inbound' ? "sender's" : 'your'} culture`}
               />
               {errors.sender_culture && (
                 <p className="text-sm text-destructive" role="alert">
@@ -248,14 +313,14 @@ export function InterpretationForm(): JSX.Element {
                 htmlFor="receiver-culture"
                 className="text-base font-medium"
               >
-                Receiver&apos;s Culture
+                {receiverLabel}
               </Label>
               <CultureSelector
                 id="receiver-culture"
                 value={receiverCulture as CultureCode}
                 onChange={(value) => setValue('receiver_culture', value)}
                 disabled={isLoading}
-                aria-label="Receiver's culture"
+                aria-label={receiverLabel}
                 placeholder="Select receiver's culture"
               />
               {errors.receiver_culture && (
@@ -281,7 +346,7 @@ export function InterpretationForm(): JSX.Element {
                       {isLoading && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      {isLoading ? 'Interpreting...' : 'Interpret'}
+                      {isLoading ? loadingButtonLabel : submitButtonLabel}
                     </Button>
                   </div>
                 </TooltipTrigger>
