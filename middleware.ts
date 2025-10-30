@@ -9,6 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  *
  * Protected Routes:
  * - /dashboard/* - Requires authentication (Story 1.5A dashboard page)
+ * - /admin/* - Requires authentication (Story 4.5 admin analytics)
  *
  * Public Routes:
  * - / (landing page)
@@ -23,12 +24,15 @@ import { NextResponse, type NextRequest } from 'next/server';
  * 4. If authenticated and accessing protected route → allow access
  *
  * IMPORTANT: This middleware ONLY handles authentication (identity check).
- * Authorization (tier/usage checks) MUST be done in the dashboard page via database query.
+ * Authorization (tier/usage checks for dashboard, admin checks for /admin)
+ * MUST be done in the page/API route via database query.
  * See app/(dashboard)/dashboard/page.tsx for database-as-source-of-truth pattern (Story 1.5A).
+ * See app/admin/feedback/page.tsx for admin authorization pattern (Story 4.5).
  *
  * @see architecture/16-coding-standards.md#api-route-structure-mandatory-order
  * @see lib/auth/README.md
  * @see app/(dashboard)/dashboard/page.tsx - Dashboard implementation (Story 1.5A)
+ * @see app/admin/feedback/page.tsx - Admin dashboard implementation (Story 4.5)
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -98,6 +102,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Protect admin routes (Story 4.5)
+  if (!user && request.nextUrl.pathname.startsWith('/admin')) {
+    const redirectUrl = new URL('/sign-in', request.url);
+    return NextResponse.redirect(redirectUrl);
+  }
+
   return response;
 }
 
@@ -106,6 +116,7 @@ export async function middleware(request: NextRequest) {
  *
  * Routes to protect:
  * - /dashboard/* (all dashboard routes)
+ * - /admin/* (all admin routes - Story 4.5)
  *
  * Routes to exclude (handled separately):
  * - / (landing page - public)
