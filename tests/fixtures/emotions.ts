@@ -126,3 +126,33 @@ export const mockErrorResponse = {
     message: "You've reached your message limit. Upgrade to Pro for more!",
   },
 };
+
+/**
+ * Mock outbound interpretation result (Story 4.3).
+ * Used for testing OutboundResult component and outbound UI flow.
+ */
+export const mockOutboundResult = {
+  originalAnalysis:
+    'The receiver will perceive this message as direct and potentially abrupt. Without context, it might create pressure or seem demanding.',
+  suggestions: [
+    'Add more context about the urgency',
+    'Use a softer tone with phrases like "I would appreciate"',
+    'Include an apology for the short notice',
+  ],
+  optimizedMessage:
+    'I apologize for the short notice, but we have a client deadline approaching. I would greatly appreciate it if you could complete this by tomorrow. Please let me know if you need any support.',
+  emotions: crossCultureEmotions,
+};
+
+/**
+ * Mock outbound interpretation response with metadata.
+ */
+export const mockOutboundInterpretationResponse = {
+  success: true,
+  data: {
+    interpretation: mockOutboundResult,
+  },
+  metadata: {
+    messages_remaining: 9,
+  },
+};

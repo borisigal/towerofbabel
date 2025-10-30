@@ -1,0 +1,152 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MessageComparison } from './MessageComparison';
+import { OutboundAnalysis } from './OutboundAnalysis';
+import { type OutboundInterpretationResponse } from '@/lib/llm/types';
+import { type Emotion } from '@/lib/types/models';
+
+interface OutboundResultProps {
+  result: OutboundInterpretationResponse;
+  originalMessage: string;
+  messagesRemaining?: number;
+}
+
+/**
+ * Outbound Result Display Component
+ *
+ * Displays outbound optimization results with side-by-side message comparison.
+ *
+ * Features:
+ * - Side-by-side layout (desktop) / Stacked layout (mobile)
+ * - Original message vs optimized message comparison
+ * - Copy to clipboard functionality
+ * - Analysis section with originalAnalysis, suggestions, and emotions
+ * - Responsive design (mobile/tablet/desktop)
+ * - Reuses EmotionGauge component from inbound
+ *
+ * @param result - Outbound interpretation result from API
+ * @param originalMessage - User's original message (from form state)
+ * @param messagesRemaining - Optional count of remaining messages
+ *
+ * @example
+ * ```tsx
+ * <OutboundResult
+ *   result={{
+ *     originalAnalysis: "The receiver will perceive this as...",
+ *     suggestions: ["Add more context", "Use softer tone", "Be more specific"],
+ *     optimizedMessage: "I would appreciate...",
+ *     emotions: [...]
+ *   }}
+ *   originalMessage="Can you finish this by tomorrow?"
+ *   messagesRemaining={9}
+ * />
+ * ```
+ */
+export function OutboundResult({
+  result,
+  originalMessage,
+  messagesRemaining,
+}: OutboundResultProps): JSX.Element {
+  const [copied, setCopied] = useState(false);
+
+  const { originalAnalysis, suggestions, optimizedMessage, emotions } = result;
+
+  // Determine if this is same-culture interpretation
+  // Same culture = receiverScore is undefined for all emotions
+  const sameCulture = emotions.length > 0 && emotions[0]?.receiverScore === undefined;
+
+  /**
+   * Copies optimized message to clipboard.
+   * Shows success confirmation for 2 seconds.
+   * Includes fallback for browsers without Clipboard API support.
+   */
+  const handleCopyToClipboard = async (): Promise<void> => {
+    try {
+      // Modern Clipboard API (Chrome 66+, Firefox 63+, Safari 13.1+)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(optimizedMessage);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        return;
+      }
+
+      // Fallback for older browsers using execCommand
+      const textArea = document.createElement('textarea');
+      textArea.value = optimizedMessage;
+      textArea.style.position = 'fixed'; // Prevent scrolling
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        throw new Error('execCommand failed');
+      }
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Show error alert for manual copy
+      alert('Failed to copy. Please select and copy manually.');
+    }
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="space-y-6">
+        {/* Message Comparison - Side by Side */}
+        <MessageComparison
+          originalMessage={originalMessage}
+          optimizedMessage={optimizedMessage}
+        />
+
+        {/* Copy Button */}
+        <div className="flex justify-end">
+          <Button
+            onClick={handleCopyToClipboard}
+            disabled={copied}
+            variant="outline"
+            className="min-h-[44px]"
+            aria-label="Copy optimized message to clipboard"
+          >
+            {copied ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Optimized Message
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Analysis Section */}
+        <OutboundAnalysis
+          originalAnalysis={originalAnalysis}
+          suggestions={suggestions}
+          emotions={emotions as Emotion[]}
+          sameCulture={sameCulture}
+        />
+
+        {/* Messages Remaining Display */}
+        {messagesRemaining !== undefined && (
+          <div className="border-t pt-4">
+            <p className="text-sm text-muted-foreground text-center">
+              💬 {messagesRemaining} messages remaining
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

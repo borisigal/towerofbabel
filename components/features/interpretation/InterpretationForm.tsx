@@ -16,7 +16,9 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CultureSelector } from './CultureSelector';
 import { InterpretationResult } from './InterpretationResult';
-import { type CultureCode, type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
+import { OutboundResult } from './OutboundResult';
+import { type CultureCode } from '@/lib/types/models';
+import { type InboundInterpretationResponse, type OutboundInterpretationResponse } from '@/lib/llm/types';
 import { useUsageStore } from '@/lib/stores/usageStore';
 import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
 import { log } from '@/lib/observability/logger';
@@ -64,9 +66,10 @@ export function InterpretationForm(): JSX.Element {
   const { incrementUsage } = useUsageStore();
   const { setOpen: setUpgradeModalOpen } = useUpgradeModalStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<InterpretationResultType | null>(null);
+  const [result, setResult] = useState<InboundInterpretationResponse | OutboundInterpretationResponse | null>(null);
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [originalMessage, setOriginalMessage] = useState<string>('');
 
   // Mode state with sessionStorage persistence (Story 4.1)
   const [mode, setMode] = useState<InterpretationMode>('inbound');
@@ -145,6 +148,11 @@ export function InterpretationForm(): JSX.Element {
     setResult(null);
     setError(null);
     setIsLoading(true);
+
+    // Store original message for outbound display
+    if (mode === 'outbound') {
+      setOriginalMessage(data.message);
+    }
 
     try {
       log.info('Submitting interpretation request', {
@@ -378,11 +386,21 @@ export function InterpretationForm(): JSX.Element {
         </div>
       )}
 
-      {/* Results Display */}
-      {result && (
+      {/* Results Display - Route based on mode */}
+      {result && mode === 'inbound' && (
         <div id="interpretation-results" className="mt-6">
           <InterpretationResult
-            result={result}
+            result={result as InboundInterpretationResponse}
+            messagesRemaining={messagesRemaining}
+          />
+        </div>
+      )}
+
+      {result && mode === 'outbound' && (
+        <div id="interpretation-results" className="mt-6">
+          <OutboundResult
+            result={result as OutboundInterpretationResponse}
+            originalMessage={originalMessage}
             messagesRemaining={messagesRemaining}
           />
         </div>
