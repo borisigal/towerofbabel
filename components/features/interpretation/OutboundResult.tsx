@@ -5,6 +5,7 @@ import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MessageComparison } from './MessageComparison';
 import { OutboundAnalysis } from './OutboundAnalysis';
+import { FeedbackButtons } from './FeedbackButtons';
 import { type OutboundInterpretationResponse } from '@/lib/llm/types';
 import { type Emotion } from '@/lib/types/models';
 
@@ -12,6 +13,7 @@ interface OutboundResultProps {
   result: OutboundInterpretationResponse;
   originalMessage: string;
   messagesRemaining?: number;
+  interpretationId?: string;
 }
 
 /**
@@ -49,6 +51,7 @@ export function OutboundResult({
   result,
   originalMessage,
   messagesRemaining,
+  interpretationId,
 }: OutboundResultProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
@@ -137,6 +140,13 @@ export function OutboundResult({
           emotions={emotions as Emotion[]}
           sameCulture={sameCulture}
         />
+
+        {/* Feedback Buttons Section */}
+        {interpretationId && (
+          <div className="border-t border-blue-200 dark:border-blue-800 pt-4">
+            <FeedbackButtons interpretationId={interpretationId} />
+          </div>
+        )}
 
         {/* Messages Remaining Display */}
         {messagesRemaining !== undefined && (

@@ -431,6 +431,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         success: true,
         data: {
           interpretation: result.interpretation,
+          interpretationId: interpretation.id,
         },
         metadata: {
           messages_remaining: usageCheck.messagesRemaining

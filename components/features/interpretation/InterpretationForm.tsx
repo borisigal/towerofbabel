@@ -70,6 +70,7 @@ export function InterpretationForm(): JSX.Element {
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [originalMessage, setOriginalMessage] = useState<string>('');
+  const [interpretationId, setInterpretationId] = useState<string | null>(null);
 
   // Mode state with sessionStorage persistence (Story 4.1)
   const [mode, setMode] = useState<InterpretationMode>('inbound');
@@ -197,6 +198,7 @@ export function InterpretationForm(): JSX.Element {
 
         // Store result for display
         setResult(responseData.data.interpretation);
+        setInterpretationId(responseData.data.interpretationId);
         setMessagesRemaining(responseData.metadata?.messages_remaining);
 
         // Update usage counter in Zustand store (real-time UI update - Story 3.2)
@@ -392,6 +394,7 @@ export function InterpretationForm(): JSX.Element {
           <InterpretationResult
             result={result as InboundInterpretationResponse}
             messagesRemaining={messagesRemaining}
+            interpretationId={interpretationId || undefined}
           />
         </div>
       )}
@@ -402,6 +405,7 @@ export function InterpretationForm(): JSX.Element {
             result={result as OutboundInterpretationResponse}
             originalMessage={originalMessage}
             messagesRemaining={messagesRemaining}
+            interpretationId={interpretationId || undefined}
           />
         </div>
       )}

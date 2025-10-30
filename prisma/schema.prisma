@@ -63,9 +63,10 @@ model Interpretation {
   culture_sender       String
   culture_receiver     String
   character_count      Int
-  interpretation_type  String   // "inbound" | "outbound" | "both"
-  feedback             String?  // Optional user rating, NOT message content
-  cost_usd             Decimal  @db.Decimal(10, 4)
+  interpretation_type  String    // "inbound" | "outbound" | "both"
+  feedback             String?   // "up" | "down" (optional user rating)
+  feedback_timestamp   DateTime? // When feedback was submitted
+  cost_usd             Decimal   @db.Decimal(10, 4)
   llm_provider         String   // "openai" | "anthropic" | "xai" | "google"
   response_time_ms     Int
   tokens_input         Int?     // Input tokens sent to LLM

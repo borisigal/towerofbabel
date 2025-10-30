@@ -3,10 +3,12 @@
 import React from 'react';
 import { type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
 import { EmotionGauge } from './EmotionGauge';
+import { FeedbackButtons } from './FeedbackButtons';
 
 interface InterpretationResultProps {
   result: InterpretationResultType;
   messagesRemaining?: number;
+  interpretationId?: string;
 }
 
 /**
@@ -28,6 +30,7 @@ interface InterpretationResultProps {
 export function InterpretationResult({
   result,
   messagesRemaining,
+  interpretationId,
 }: InterpretationResultProps): JSX.Element {
   const { bottomLine, culturalContext, emotions } = result;
 
@@ -76,6 +79,13 @@ export function InterpretationResult({
             ))}
           </div>
         </section>
+
+        {/* Feedback Buttons Section */}
+        {interpretationId && (
+          <section className="border-t border-blue-200 dark:border-blue-800 pt-4">
+            <FeedbackButtons interpretationId={interpretationId} />
+          </section>
+        )}
 
         {/* Messages Remaining Display */}
         {messagesRemaining !== undefined && (
