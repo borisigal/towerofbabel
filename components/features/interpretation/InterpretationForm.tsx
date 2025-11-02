@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +17,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CultureSelector } from './CultureSelector';
 import { InterpretationResult } from './InterpretationResult';
 import { OutboundResult } from './OutboundResult';
+import { ErrorMessage } from './ErrorMessage';
+import { InterpretationResultsSkeleton } from './InterpretationResultsSkeleton';
 import { type CultureCode } from '@/lib/types/models';
 import { type InboundInterpretationResponse, type OutboundInterpretationResponse } from '@/lib/llm/types';
 import { useUsageStore } from '@/lib/stores/usageStore';
@@ -68,7 +70,7 @@ export function InterpretationForm(): JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<InboundInterpretationResponse | OutboundInterpretationResponse | null>(null);
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [originalMessage, setOriginalMessage] = useState<string>('');
   const [interpretationId, setInterpretationId] = useState<string | null>(null);
 
@@ -182,10 +184,11 @@ export function InterpretationForm(): JSX.Element {
         if (errorCode === 'LIMIT_EXCEEDED' || errorCode === 'TRIAL_EXPIRED') {
           log.info('Usage limit reached, opening upgrade modal', { errorCode });
           setUpgradeModalOpen(true, 'limit_exceeded');
-          // Still set error message for display
-          setError(
-            responseData.error?.message || 'Usage limit reached. Please upgrade to continue.'
-          );
+          // Set error with proper structure for ErrorMessage component
+          setError({
+            code: errorCode,
+            message: responseData.error?.message || 'Usage limit reached. Please upgrade to continue.',
+          });
           return;
         }
       }
@@ -216,16 +219,20 @@ export function InterpretationForm(): JSX.Element {
         }, 100);
       } else {
         log.error('Interpretation failed', { error: responseData.error });
-        setError(
-          responseData.error?.message || 'Interpretation failed. Please try again.'
-        );
+        setError({
+          code: responseData.error?.code || 'INTERNAL_ERROR',
+          message: responseData.error?.message || 'Interpretation failed. Please try again.',
+        });
       }
     } catch (error) {
       log.error('Interpretation request failed', {
         mode: mode,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-      setError('Network error. Please check your connection and try again.');
+      setError({
+        code: 'INTERNAL_ERROR',
+        message: 'Network error. Please check your connection and try again.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -353,9 +360,7 @@ export function InterpretationForm(): JSX.Element {
                       className="w-full sm:w-auto min-h-[44px] px-6"
                       aria-live="polite"
                     >
-                      {isLoading && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
+                      {isLoading && <Spinner size="sm" className="mr-2" />}
                       {isLoading ? loadingButtonLabel : submitButtonLabel}
                     </Button>
                   </div>
@@ -379,17 +384,26 @@ export function InterpretationForm(): JSX.Element {
         </form>
       </div>
 
-      {/* Error Display */}
+      {/* Error Display - User-friendly error messages */}
       {error && (
-        <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-900 dark:text-red-100 font-medium">
-            {error}
-          </p>
+        <ErrorMessage
+          error={error}
+          onRetry={() => {
+            setError(null);
+            handleSubmit(onSubmit)();
+          }}
+        />
+      )}
+
+      {/* Loading Skeleton */}
+      {isLoading && !result && (
+        <div className="mt-6">
+          <InterpretationResultsSkeleton />
         </div>
       )}
 
       {/* Results Display - Route based on mode */}
-      {result && mode === 'inbound' && (
+      {result && mode === 'inbound' && !isLoading && (
         <div id="interpretation-results" className="mt-6">
           <InterpretationResult
             result={result as InboundInterpretationResponse}
@@ -399,7 +413,7 @@ export function InterpretationForm(): JSX.Element {
         </div>
       )}
 
-      {result && mode === 'outbound' && (
+      {result && mode === 'outbound' && !isLoading && (
         <div id="interpretation-results" className="mt-6">
           <OutboundResult
             result={result as OutboundInterpretationResponse}
