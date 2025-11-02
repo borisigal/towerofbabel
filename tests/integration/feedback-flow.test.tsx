@@ -85,7 +85,7 @@ describe('Feedback Flow - Integration Tests', () => {
       expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
     });
     const receiverAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-    await user.click(receiverAmericans[receiverAmericans.length - 1]);
+    await user.click(receiverAmericans[receiverAmericans.length - 1]!);
 
     const submitButton = screen.getByRole('button', { name: /^interpret$/i });
     await user.click(submitButton);
@@ -186,7 +186,7 @@ describe('Feedback Flow - Integration Tests', () => {
       expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
     });
     const receiverJapanese = await screen.findAllByText('🇯🇵 Japanese', {}, { timeout: 2000 });
-    await user.click(receiverJapanese[receiverJapanese.length - 1]);
+    await user.click(receiverJapanese[receiverJapanese.length - 1]!);
 
     const optimizeButton = screen.getByRole('button', { name: /^optimize$/i });
     await user.click(optimizeButton);
@@ -274,7 +274,7 @@ describe('Feedback Flow - Integration Tests', () => {
     await user.click(receiverTrigger);
     await waitFor(() => expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true'));
     const receiverOptions = await screen.findAllByText('🇺🇸 American');
-    await user.click(receiverOptions[receiverOptions.length - 1]);
+    await user.click(receiverOptions[receiverOptions.length - 1]!);
 
     await user.click(screen.getByRole('button', { name: /^interpret$/i }));
 
@@ -335,7 +335,7 @@ describe('Feedback Flow - Integration Tests', () => {
     await user.click(receiverTrigger);
     await waitFor(() => expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true'));
     const receiverOptions = await screen.findAllByText('🇺🇸 American');
-    await user.click(receiverOptions[receiverOptions.length - 1]);
+    await user.click(receiverOptions[receiverOptions.length - 1]!);
 
     await user.click(screen.getByRole('button', { name: /^interpret$/i }));
 

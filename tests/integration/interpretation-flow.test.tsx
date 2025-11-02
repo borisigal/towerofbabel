@@ -74,7 +74,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(receiverAmericans[receiverAmericans.length - 1]);
+      await user.click(receiverAmericans[receiverAmericans.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -143,7 +143,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -151,7 +151,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverJapaneses = await screen.findAllByText('🇯🇵 Japanese', {}, { timeout: 2000 });
-      await user.click(receiverJapaneses[receiverJapaneses.length - 1]);
+      await user.click(receiverJapaneses[receiverJapaneses.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -207,7 +207,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -215,7 +215,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverJapaneses = await screen.findAllByText('🇯🇵 Japanese', {}, { timeout: 2000 });
-      await user.click(receiverJapaneses[receiverJapaneses.length - 1]);
+      await user.click(receiverJapaneses[receiverJapaneses.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -263,7 +263,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -271,7 +271,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverJapaneses = await screen.findAllByText('🇯🇵 Japanese', {}, { timeout: 2000 });
-      await user.click(receiverJapaneses[receiverJapaneses.length - 1]);
+      await user.click(receiverJapaneses[receiverJapaneses.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -304,7 +304,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -312,7 +312,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverJapaneses = await screen.findAllByText('🇯🇵 Japanese', {}, { timeout: 2000 });
-      await user.click(receiverJapaneses[receiverJapaneses.length - 1]);
+      await user.click(receiverJapaneses[receiverJapaneses.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -358,7 +358,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -366,7 +366,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(receiverAmericans[receiverAmericans.length - 1]);
+      await user.click(receiverAmericans[receiverAmericans.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -443,7 +443,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -451,7 +451,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(receiverAmericans[receiverAmericans.length - 1]);
+      await user.click(receiverAmericans[receiverAmericans.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });
@@ -529,7 +529,7 @@ describe('Interpretation Flow - Integration Tests', () => {
       const senderTrigger = document.getElementById('sender-culture')!;
       await user.click(senderTrigger);
       const senderAmericans = await screen.findAllByText('🇺🇸 American', {}, { timeout: 2000 });
-      await user.click(senderAmericans[senderAmericans.length - 1]);
+      await user.click(senderAmericans[senderAmericans.length - 1]!);
 
       const receiverTrigger = document.getElementById('receiver-culture')!;
       await user.click(receiverTrigger);
@@ -537,7 +537,7 @@ describe('Interpretation Flow - Integration Tests', () => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'true');
       });
       const receiverJapaneses = await screen.findAllByText('🇯🇵 Japanese', {}, { timeout: 2000 });
-      await user.click(receiverJapaneses[receiverJapaneses.length - 1]);
+      await user.click(receiverJapaneses[receiverJapaneses.length - 1]!);
       await waitFor(() => {
         expect(receiverTrigger).toHaveAttribute('aria-expanded', 'false');
       });

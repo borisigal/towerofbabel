@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PrivacyBadge } from '@/components/features/privacy/PrivacyBadge';
 
 /**
  * Home page / Landing page for the TowerOfBabel application.
@@ -7,6 +8,7 @@ import Link from 'next/link';
  * Provides call-to-action to sign in and start using the cultural interpretation tool.
  */
 export default function Home(): JSX.Element {
+  const providerName = process.env.NEXT_PUBLIC_LLM_PROVIDER_NAME || 'OpenAI';
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
       {/* Hero Section */}
@@ -31,8 +33,11 @@ export default function Home(): JSX.Element {
         </Link>
 
         {/* Secondary Info */}
-        <div className="mt-8 text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-8 text-sm text-gray-500 dark:text-gray-400 space-y-3">
           <p>Start with a free trial • No credit card required</p>
+          <div className="flex justify-center">
+            <PrivacyBadge variant="landing" providerName={providerName} />
+          </div>
         </div>
       </div>
 

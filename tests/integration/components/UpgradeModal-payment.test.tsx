@@ -57,16 +57,17 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
       });
 
       // Mock window.location.href setter
-      delete (window as any).location;
-      window.location = { href: '' } as Location;
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { href: '' }
+      });
 
       render(
         <UpgradeModal
           open={true}
           onOpenChange={vi.fn()}
-          trigger="limit_reached"
+          trigger="limit_exceeded"
           currentTier="trial"
-          messagesRemaining={0}
         />
       );
 
@@ -96,8 +97,10 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
         }),
       });
 
-      delete (window as any).location;
-      window.location = { href: '' } as Location;
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { href: '' }
+      });
 
       render(
         <UpgradeModal
@@ -105,7 +108,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={vi.fn()}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 
@@ -136,9 +138,8 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
         <UpgradeModal
           open={true}
           onOpenChange={vi.fn()}
-          trigger="limit_reached"
+          trigger="limit_exceeded"
           currentTier="trial"
-          messagesRemaining={0}
         />
       );
 
@@ -185,7 +186,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={vi.fn()}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 
@@ -224,9 +224,8 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
         <UpgradeModal
           open={true}
           onOpenChange={vi.fn()}
-          trigger="limit_reached"
+          trigger="limit_exceeded"
           currentTier="trial"
-          messagesRemaining={0}
         />
       );
 
@@ -266,7 +265,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={mockOnOpenChange}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 
@@ -309,9 +307,8 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
         <UpgradeModal
           open={true}
           onOpenChange={vi.fn()}
-          trigger="limit_reached"
+          trigger="limit_exceeded"
           currentTier="trial"
-          messagesRemaining={0}
         />
       );
 
@@ -357,7 +354,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={vi.fn()}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 
@@ -402,7 +398,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={vi.fn()}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 
@@ -447,7 +442,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={vi.fn()}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 
@@ -478,9 +472,8 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
         <UpgradeModal
           open={true}
           onOpenChange={vi.fn()}
-          trigger="limit_reached"
+          trigger="limit_exceeded"
           currentTier="trial"
-          messagesRemaining={0}
         />
       );
 
@@ -517,7 +510,6 @@ describe('UpgradeModal Payment Flow Integration Tests', () => {
           onOpenChange={vi.fn()}
           trigger="proactive"
           currentTier="trial"
-          messagesRemaining={5}
         />
       );
 

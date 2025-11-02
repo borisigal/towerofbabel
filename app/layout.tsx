@@ -1,6 +1,7 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import { Toaster } from '@/components/ui/toaster';
+import { Footer } from '@/components/layout/Footer';
 
 export const metadata = {
   title: 'TowerOfBabel',
@@ -19,8 +20,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
   return (
     <html lang="en" className="dark">
-      <body>
-        {children}
+      <body className="flex flex-col min-h-screen">
+        <main className="flex-1">{children}</main>
+        <Footer />
         <Toaster />
       </body>
     </html>

@@ -179,7 +179,7 @@ describe('InterpretationForm', () => {
       expect(comboboxes.length).toBeGreaterThan(0);
     });
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
+    const senderTrigger = screen.getAllByRole('combobox')[0]!;
     await user.click(senderTrigger);
 
     await waitFor(async () => {
@@ -188,7 +188,7 @@ describe('InterpretationForm', () => {
     });
 
     // Select receiver culture
-    const receiverTrigger = screen.getAllByRole('combobox')[1];
+    const receiverTrigger = screen.getAllByRole('combobox')[1]!;
     await user.click(receiverTrigger);
 
     await waitFor(async () => {
@@ -223,7 +223,7 @@ describe('InterpretationForm', () => {
 
     
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
+    const senderTrigger = screen.getAllByRole('combobox')[0]!;
     await user.click(senderTrigger);
     await waitFor(async () => {
       const americanOption = screen.getByRole('option', { name: /American/ });
@@ -245,7 +245,7 @@ describe('InterpretationForm', () => {
     
 
 
-    const receiverTrigger = screen.getAllByRole('combobox')[1];
+    const receiverTrigger = screen.getAllByRole('combobox')[1]!;
     await user.click(receiverTrigger);
     await waitFor(async () => {
       const americanOption = screen.getByRole('option', { name: /American/ });
@@ -291,7 +291,7 @@ describe('InterpretationForm', () => {
 
     
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
+    const senderTrigger = screen.getAllByRole('combobox')[0]!;
     await user.click(senderTrigger);
     await waitFor(async () => {
       const americanOption = screen.getByRole('option', { name: /American/ });
@@ -313,7 +313,7 @@ describe('InterpretationForm', () => {
     
 
 
-    const receiverTrigger = screen.getAllByRole('combobox')[1];
+    const receiverTrigger = screen.getAllByRole('combobox')[1]!;
     await user.click(receiverTrigger);
     await waitFor(async () => {
       const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
@@ -365,7 +365,7 @@ describe('InterpretationForm', () => {
     
 
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
+    const senderTrigger = screen.getAllByRole('combobox')[0]!;
     await user.click(senderTrigger);
     await waitFor(async () => {
       const americanOption = screen.getByRole('option', { name: /American/ });
@@ -387,7 +387,7 @@ describe('InterpretationForm', () => {
     
 
 
-    const receiverTrigger = screen.getAllByRole('combobox')[1];
+    const receiverTrigger = screen.getAllByRole('combobox')[1]!;
     await user.click(receiverTrigger);
     await waitFor(async () => {
       const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
@@ -412,7 +412,7 @@ describe('InterpretationForm', () => {
     render(<InterpretationForm />);
 
     // Open sender culture dropdown
-    const senderTrigger = screen.getAllByRole('combobox')[0];
+    const senderTrigger = screen.getAllByRole('combobox')[0]!;
     if (senderTrigger) await user.click(senderTrigger);
 
     // Check that all 15 cultures are present
@@ -467,7 +467,7 @@ describe('InterpretationForm', () => {
     
 
 
-    const senderTrigger = screen.getAllByRole('combobox')[0];
+    const senderTrigger = screen.getAllByRole('combobox')[0]!;
     await user.click(senderTrigger);
     await waitFor(async () => {
       const americanOption = screen.getByRole('option', { name: /American/ });
@@ -489,7 +489,7 @@ describe('InterpretationForm', () => {
     
 
 
-    const receiverTrigger = screen.getAllByRole('combobox')[1];
+    const receiverTrigger = screen.getAllByRole('combobox')[1]!;
     await user.click(receiverTrigger);
     await waitFor(async () => {
       const japaneseOption = screen.getByRole('option', { name: /Japanese/ });
