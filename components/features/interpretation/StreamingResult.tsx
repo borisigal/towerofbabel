@@ -1,13 +1,19 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Spinner } from '@/components/ui/spinner';
+import React from 'react';
 import { InterpretationResult } from './InterpretationResult';
 import { OutboundResult } from './OutboundResult';
+import { InboundStreamingSkeleton } from './InboundStreamingSkeleton';
+import { OutboundStreamingSkeleton } from './OutboundStreamingSkeleton';
 import {
   InboundInterpretationResponse,
   OutboundInterpretationResponse,
 } from '@/lib/llm/types';
+import {
+  useProgressiveJsonParser,
+  type PartialInboundResult,
+  type PartialOutboundResult,
+} from '@/lib/hooks/useProgressiveJsonParser';
 
 /**
  * Props for StreamingResult component.
@@ -33,13 +39,17 @@ interface StreamingResultProps {
 
 /**
  * Progressively renders streaming interpretation results.
- * Shows raw text while streaming, then formatted result when complete.
+ *
+ * Instead of showing raw JSON text during streaming, this component:
+ * 1. Displays a skeleton UI matching the final result layout
+ * 2. Progressively parses the streaming JSON to extract completed fields
+ * 3. Fills in sections as they become available
+ * 4. Transitions to the final formatted result when complete
  *
  * Accessibility notes:
- * - Uses aria-live="off" during streaming to prevent overwhelming screen readers
  * - Uses aria-busy="true" during streaming to indicate loading state
  * - Switches to aria-live="assertive" when complete for single announcement
- * - Respects prefers-reduced-motion for cursor animation
+ * - Respects prefers-reduced-motion for cursor animations
  *
  * @param props - Component props
  * @returns JSX element or null
@@ -54,72 +64,37 @@ export function StreamingResult({
   messagesRemaining,
   interpretationId,
 }: StreamingResultProps): JSX.Element | null {
-  // Check for reduced motion preference
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // Parse streaming JSON progressively to extract completed fields
+  const partialResult = useProgressiveJsonParser(streamingText, mode);
 
-  useEffect(() => {
-    // Guard against SSR and test environments without matchMedia
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-
-    try {
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      setPrefersReducedMotion(mediaQuery.matches);
-
-      // Listen for changes
-      const handler = (e: MediaQueryListEvent): void => {
-        setPrefersReducedMotion(e.matches);
-      };
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
-    } catch {
-      // matchMedia not available in test environment
-      return;
-    }
-  }, []);
-
-  // While streaming: show raw text with typing cursor
+  // While streaming: show skeleton with progressive content fill-in
   if (isStreaming && !isComplete) {
-    return (
-      <div
-        id="interpretation-results"
-        className="bg-card rounded-lg border border-border p-6 shadow-sm space-y-4 mt-6"
-      >
-        {/* Accessibility: aria-live="off" during streaming to prevent overwhelming screen readers */}
-        <div
-          aria-live="off"
-          aria-busy="true"
-          aria-label="Interpretation results loading"
-          className="prose prose-sm max-w-none dark:prose-invert"
-        >
-          <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-            {streamingText}
-            {/* Animated cursor - respects prefers-reduced-motion */}
-            {!prefersReducedMotion && (
-              <span className="animate-pulse inline-block w-0.5 h-4 bg-primary ml-0.5 align-middle" />
-            )}
-            {prefersReducedMotion && (
-              <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 align-middle" />
-            )}
-          </p>
+    if (mode === 'inbound') {
+      return (
+        <div id="interpretation-results">
+          <InboundStreamingSkeleton
+            partialResult={partialResult as PartialInboundResult}
+            isStreaming={isStreaming}
+          />
         </div>
-        <div className="flex items-center gap-2 text-muted-foreground text-sm pt-2 border-t border-border">
-          <Spinner size="sm" />
-          <span>
-            {mode === 'inbound'
-              ? 'Generating interpretation...'
-              : 'Optimizing message...'}
-          </span>
+      );
+    } else {
+      return (
+        <div id="interpretation-results">
+          <OutboundStreamingSkeleton
+            partialResult={partialResult as PartialOutboundResult}
+            isStreaming={isStreaming}
+            originalMessage={originalMessage || ''}
+          />
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // When complete: render formatted result with single announcement
   if (isComplete && result) {
     return (
-      <div aria-live="assertive" aria-busy="false">
+      <div id="interpretation-results" aria-live="assertive" aria-busy="false">
         {mode === 'inbound' ? (
           <InterpretationResult
             result={result as InboundInterpretationResponse}
