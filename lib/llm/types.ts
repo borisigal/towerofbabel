@@ -4,6 +4,7 @@
  */
 
 import { CultureCode } from '@/lib/types/models';
+import { StreamChunk } from './streamTypes';
 
 /**
  * Request payload for LLM interpretation.
@@ -79,7 +80,7 @@ export interface LLMEmotion {
 
 /**
  * Metadata about the LLM request/response.
- * Includes cost, performance, and token usage metrics.
+ * Includes cost, performance, token usage, and cache metrics.
  */
 export interface LLMMetadata {
   /** Cost of the LLM call in USD */
@@ -90,6 +91,14 @@ export interface LLMMetadata {
   tokenCount: number;
   /** Model identifier used for interpretation */
   model: string;
+  /** Input tokens (for detailed tracking) */
+  inputTokens?: number;
+  /** Output tokens (for detailed tracking) */
+  outputTokens?: number;
+  /** Tokens served from cache (prompt caching benefit - 90% discount) */
+  cacheReadTokens?: number;
+  /** Tokens written to cache (first request for this prompt - 25% premium) */
+  cacheCreationTokens?: number;
 }
 
 /**
@@ -130,4 +139,22 @@ export interface LLMAdapter {
     interpretation: InterpretationResponse;
     metadata: LLMMetadata;
   }>;
+
+  /**
+   * Streaming interpretation method.
+   * Yields text chunks as they are received, then yields a final 'complete' chunk
+   * with the parsed interpretation and metadata.
+   *
+   * NOTE: Uses yield for final result (not return) because AsyncGenerator return
+   * values cannot be captured with for-await loops. The consumer should check
+   * chunk.type to identify the complete chunk.
+   *
+   * @param request - Interpretation request with message and culture context
+   * @param mode - Interpretation mode: 'inbound' or 'outbound'
+   * @yields StreamTextChunk for each text fragment, then StreamCompleteChunk at end
+   */
+  interpretStream?(
+    request: LLMInterpretationRequest,
+    mode: 'inbound' | 'outbound'
+  ): AsyncGenerator<StreamChunk, void, unknown>;
 }

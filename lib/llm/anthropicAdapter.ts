@@ -5,8 +5,9 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import {
-  generateInterpretationPrompt,
-  generateOutboundOptimizationPrompt,
+  generateDynamicInterpretationPrompt,
+  generateDynamicOutboundPrompt,
+  CACHEABLE_SYSTEM_MESSAGE,
 } from './prompts';
 import {
   LLMAdapter,
@@ -17,6 +18,7 @@ import {
   LLMMetadata,
   LLMEmotion,
 } from './types';
+import { StreamChunk } from './streamTypes';
 import {
   LLMTimeoutError,
   LLMRateLimitError,
@@ -28,11 +30,13 @@ import { logger } from '@/lib/observability/logger';
 
 /**
  * Claude Sonnet 4.5 pricing (as of 2025-01).
- * Used for cost calculation per interpretation.
+ * Includes prompt caching pricing tiers.
  */
 const ANTHROPIC_PRICING = {
   INPUT_COST_PER_1M: 3.0, // $3.00 per 1M input tokens
   OUTPUT_COST_PER_1M: 15.0, // $15.00 per 1M output tokens
+  CACHE_WRITE_COST_PER_1M: 3.75, // $3.75 per 1M cache creation tokens (25% premium)
+  CACHE_READ_COST_PER_1M: 0.3, // $0.30 per 1M cache read tokens (90% discount)
 };
 
 /**
@@ -289,23 +293,61 @@ function validateEmotions(
   });
 }
 
+// Note: The legacy calculateAnthropicCost function has been removed.
+// All cost calculations now use calculateAnthropicCostWithCaching for cache-aware pricing.
+
 /**
- * Calculates cost of Anthropic API call based on token usage.
+ * Calculates cost of Anthropic API call with prompt caching.
  *
- * @param inputTokens - Number of input tokens
+ * IMPORTANT: Anthropic's response.usage.input_tokens is the TOTAL input tokens,
+ * which INCLUDES any cache_read_input_tokens. We must subtract to avoid
+ * double-counting cached tokens.
+ *
+ * Verification: input_tokens >= cache_read_input_tokens (always true)
+ * If this assertion fails, Anthropic changed their API response format.
+ *
+ * @param inputTokens - Total input tokens (includes cached)
  * @param outputTokens - Number of output tokens
+ * @param cacheCreationTokens - Number of tokens written to cache (first request)
+ * @param cacheReadTokens - Number of tokens served from cache
  * @returns Cost in USD
  */
-function calculateAnthropicCost(
+function calculateAnthropicCostWithCaching(
   inputTokens: number,
-  outputTokens: number
+  outputTokens: number,
+  cacheCreationTokens: number = 0,
+  cacheReadTokens: number = 0
 ): number {
+  // Sanity check - cache read tokens should never exceed input tokens
+  if (cacheReadTokens > inputTokens) {
+    logger.warn(
+      {
+        inputTokens,
+        cacheReadTokens,
+      },
+      'Unexpected: cacheReadTokens > inputTokens - Anthropic API may have changed'
+    );
+  }
+
+  // Regular input tokens = total - cached (cached billed separately at discount)
+  // Use Math.max to prevent negative values if API behavior changes
+  const regularInputTokens = Math.max(0, inputTokens - cacheReadTokens);
   const inputCost =
-    (inputTokens / 1_000_000) * ANTHROPIC_PRICING.INPUT_COST_PER_1M;
+    (regularInputTokens / 1_000_000) * ANTHROPIC_PRICING.INPUT_COST_PER_1M;
+
+  // Output tokens (no caching)
   const outputCost =
     (outputTokens / 1_000_000) * ANTHROPIC_PRICING.OUTPUT_COST_PER_1M;
 
-  return inputCost + outputCost;
+  // Cache creation tokens (25% premium)
+  const cacheWriteCost =
+    (cacheCreationTokens / 1_000_000) * ANTHROPIC_PRICING.CACHE_WRITE_COST_PER_1M;
+
+  // Cache read tokens (90% discount)
+  const cacheReadCost =
+    (cacheReadTokens / 1_000_000) * ANTHROPIC_PRICING.CACHE_READ_COST_PER_1M;
+
+  return inputCost + outputCost + cacheWriteCost + cacheReadCost;
 }
 
 /**
@@ -342,6 +384,7 @@ export class AnthropicAdapter implements LLMAdapter {
   /**
    * Interprets a message using Claude Sonnet 4.5 or optimizes outbound message.
    * Handles prompt generation, API call, response parsing, and error handling.
+   * Uses prompt caching with separate system message for cost optimization.
    *
    * @param request - Interpretation request with message and culture context
    * @param mode - Interpretation mode: 'inbound' or 'outbound'
@@ -361,16 +404,16 @@ export class AnthropicAdapter implements LLMAdapter {
   }> {
     const startTime = Date.now();
 
-    // Generate prompt based on mode
-    const prompt =
+    // Generate dynamic prompt (excludes system message for caching)
+    const dynamicPrompt =
       mode === 'inbound'
-        ? generateInterpretationPrompt(
+        ? generateDynamicInterpretationPrompt(
             request.message,
             request.senderCulture,
             request.receiverCulture,
             request.sameCulture
           )
-        : generateOutboundOptimizationPrompt(
+        : generateDynamicOutboundPrompt(
             request.message,
             request.senderCulture,
             request.receiverCulture,
@@ -378,29 +421,41 @@ export class AnthropicAdapter implements LLMAdapter {
           );
 
     // Log before LLM call
-    logger.info({
-      timestamp: new Date().toISOString(),
-      mode,
-      culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
-      characterCount: request.message.length,
-      sameCulture: request.sameCulture,
-    }, `Calling Claude for ${mode} processing`);
+    logger.info(
+      {
+        timestamp: new Date().toISOString(),
+        mode,
+        culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
+        characterCount: request.message.length,
+        sameCulture: request.sameCulture,
+        promptCaching: true,
+      },
+      `Calling Claude for ${mode} processing (with prompt caching)`
+    );
 
     try {
       // Create abort controller for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-      // Call Anthropic API
+      // Call Anthropic API with prompt caching
+      // System message is cached (static), user message is dynamic
       const response = await this.client.messages.create(
         {
           model: this.model,
           max_tokens: 1500,
           temperature: 0.7,
+          system: [
+            {
+              type: 'text',
+              text: CACHEABLE_SYSTEM_MESSAGE,
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
           messages: [
             {
               role: 'user',
-              content: prompt,
+              content: dynamicPrompt,
             },
           ],
         },
@@ -432,29 +487,54 @@ export class AnthropicAdapter implements LLMAdapter {
         request.sameCulture
       );
 
-      // Calculate cost and metadata
+      // Extract cache metrics from response
+      const usage = response.usage;
+      const cacheCreationTokens =
+        (usage as { cache_creation_input_tokens?: number }).cache_creation_input_tokens || 0;
+      const cacheReadTokens =
+        (usage as { cache_read_input_tokens?: number }).cache_read_input_tokens || 0;
+
+      // Calculate cost with cache-aware pricing
       const responseTimeMs = Date.now() - startTime;
-      const costUsd = calculateAnthropicCost(
-        response.usage.input_tokens,
-        response.usage.output_tokens
+      const costUsd = calculateAnthropicCostWithCaching(
+        usage.input_tokens,
+        usage.output_tokens,
+        cacheCreationTokens,
+        cacheReadTokens
       );
 
       const metadata: LLMMetadata = {
         costUsd,
         responseTimeMs,
-        tokenCount: response.usage.input_tokens + response.usage.output_tokens,
+        tokenCount: usage.input_tokens + usage.output_tokens,
         model: this.model,
+        inputTokens: usage.input_tokens,
+        outputTokens: usage.output_tokens,
+        cacheReadTokens,
+        cacheCreationTokens,
       };
 
-      // Log success
-      logger.info({
-        timestamp: new Date().toISOString(),
-        responseTimeMs,
-        costUsd,
-        tokenCount: metadata.tokenCount,
-        model: this.model,
-        success: true,
-      }, 'Claude interpretation successful');
+      // Log success with cache metrics
+      logger.info(
+        {
+          timestamp: new Date().toISOString(),
+          responseTimeMs,
+          costUsd,
+          tokenCount: metadata.tokenCount,
+          inputTokens: usage.input_tokens,
+          outputTokens: usage.output_tokens,
+          cacheCreationTokens,
+          cacheReadTokens,
+          cacheHit: cacheReadTokens > 0,
+          cacheHitRate:
+            usage.input_tokens > 0
+              ? ((cacheReadTokens / usage.input_tokens) * 100).toFixed(1) + '%'
+              : '0%',
+          model: this.model,
+          success: true,
+        },
+        'Claude interpretation successful (with cache metrics)'
+      );
 
       return { interpretation, metadata };
     } catch (error) {
@@ -519,6 +599,257 @@ export class AnthropicAdapter implements LLMAdapter {
 
       throw new LLMProviderError(
         error instanceof Error ? error.message : 'Unknown error',
+        500,
+        { error }
+      );
+    }
+  }
+
+  /**
+   * Interprets a message using Claude with streaming response.
+   * Yields text chunks as they are received, then yields a final 'complete' chunk
+   * with the parsed interpretation and metadata.
+   * Uses prompt caching with separate system message for cost optimization.
+   *
+   * NOTE: Uses yield for final result (not return) because AsyncGenerator return
+   * values cannot be captured with for-await loops. The consumer should check
+   * chunk.type to identify the complete chunk.
+   *
+   * @param request - Interpretation request with message and culture context
+   * @param mode - Interpretation mode: 'inbound' or 'outbound'
+   * @yields StreamTextChunk for each text fragment, then StreamCompleteChunk at end
+   * @throws {LLMTimeoutError} If request exceeds timeout
+   * @throws {LLMProviderError} For API errors during streaming
+   */
+  async *interpretStream(
+    request: LLMInterpretationRequest,
+    mode: 'inbound' | 'outbound' = 'inbound'
+  ): AsyncGenerator<StreamChunk, void, unknown> {
+    const startTime = Date.now();
+
+    // Generate dynamic prompt (excludes system message for caching)
+    const dynamicPrompt =
+      mode === 'inbound'
+        ? generateDynamicInterpretationPrompt(
+            request.message,
+            request.senderCulture,
+            request.receiverCulture,
+            request.sameCulture
+          )
+        : generateDynamicOutboundPrompt(
+            request.message,
+            request.senderCulture,
+            request.receiverCulture,
+            request.sameCulture
+          );
+
+    // Log before streaming call
+    logger.info(
+      {
+        timestamp: new Date().toISOString(),
+        mode,
+        culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
+        characterCount: request.message.length,
+        sameCulture: request.sameCulture,
+        streaming: true,
+        promptCaching: true,
+      },
+      `Calling Claude for ${mode} processing (streaming with prompt caching)`
+    );
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      // Call Anthropic API with streaming and prompt caching enabled
+      // System message is cached (static), user message is dynamic
+      const stream = this.client.messages.stream(
+        {
+          model: this.model,
+          max_tokens: 1500,
+          temperature: 0.7,
+          system: [
+            {
+              type: 'text',
+              text: CACHEABLE_SYSTEM_MESSAGE,
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
+          messages: [{ role: 'user', content: dynamicPrompt }],
+        },
+        {
+          signal: controller.signal as AbortSignal,
+        }
+      );
+
+      let fullText = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let cacheCreationTokens = 0;
+      let cacheReadTokens = 0;
+
+      // Yield text chunks as they arrive
+      for await (const event of stream) {
+        if (
+          event.type === 'content_block_delta' &&
+          event.delta.type === 'text_delta'
+        ) {
+          fullText += event.delta.text;
+          yield { type: 'text', text: event.delta.text };
+        }
+
+        if (event.type === 'message_delta' && event.usage) {
+          outputTokens = event.usage.output_tokens;
+        }
+
+        // Extract input tokens and cache metrics from message_start event
+        if (event.type === 'message_start' && event.message.usage) {
+          inputTokens = event.message.usage.input_tokens;
+          // Extract cache metrics from usage (Anthropic includes them in message_start)
+          const usage = event.message.usage as {
+            input_tokens: number;
+            cache_creation_input_tokens?: number;
+            cache_read_input_tokens?: number;
+          };
+          cacheCreationTokens = usage.cache_creation_input_tokens || 0;
+          cacheReadTokens = usage.cache_read_input_tokens || 0;
+        }
+      }
+
+      clearTimeout(timeoutId);
+
+      // Parse final response using existing helper function (file-scoped)
+      const interpretation = parseInterpretationResponse(
+        fullText,
+        mode,
+        request.sameCulture
+      );
+
+      // Calculate cost with cache-aware pricing
+      const costUsd = calculateAnthropicCostWithCaching(
+        inputTokens,
+        outputTokens,
+        cacheCreationTokens,
+        cacheReadTokens
+      );
+
+      const metadata: LLMMetadata = {
+        costUsd,
+        responseTimeMs: Date.now() - startTime,
+        tokenCount: inputTokens + outputTokens,
+        model: this.model,
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheCreationTokens,
+      };
+
+      // Log success with cache metrics
+      logger.info(
+        {
+          timestamp: new Date().toISOString(),
+          responseTimeMs: metadata.responseTimeMs,
+          costUsd: metadata.costUsd,
+          tokenCount: metadata.tokenCount,
+          inputTokens,
+          outputTokens,
+          cacheCreationTokens,
+          cacheReadTokens,
+          cacheHit: cacheReadTokens > 0,
+          cacheHitRate:
+            inputTokens > 0
+              ? ((cacheReadTokens / inputTokens) * 100).toFixed(1) + '%'
+              : '0%',
+          model: this.model,
+          streaming: true,
+          success: true,
+        },
+        'Claude streaming interpretation successful (with cache metrics)'
+      );
+
+      // Yield complete chunk (NOT return - allows consumer to use for-await)
+      yield { type: 'complete', interpretation, metadata };
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      // Handle abort/timeout
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.error(
+          {
+            timestamp: new Date().toISOString(),
+            errorType: 'LLMTimeoutError',
+            errorMessage: 'Streaming request timed out',
+            culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
+            streaming: true,
+            success: false,
+          },
+          'Claude streaming timeout error'
+        );
+        throw new LLMTimeoutError();
+      }
+
+      // Handle Anthropic API errors
+      if (error instanceof Anthropic.APIError) {
+        logger.error(
+          {
+            timestamp: new Date().toISOString(),
+            errorType: error.constructor.name,
+            errorMessage: error.message,
+            statusCode: error.status,
+            culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
+            streaming: true,
+            success: false,
+          },
+          'Claude streaming API error'
+        );
+
+        if (error.status === 401) {
+          throw new LLMAuthError();
+        }
+
+        if (error.status === 429) {
+          const retryAfter =
+            error.headers?.['retry-after'] !== undefined
+              ? parseInt(error.headers['retry-after'] as string, 10)
+              : undefined;
+          throw new LLMRateLimitError(retryAfter);
+        }
+
+        throw new LLMProviderError(error.message, error.status);
+      }
+
+      // Handle parsing errors
+      if (error instanceof LLMParsingError) {
+        logger.error(
+          {
+            timestamp: new Date().toISOString(),
+            errorType: 'LLMParsingError',
+            errorMessage: error.message,
+            culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
+            streaming: true,
+            success: false,
+          },
+          'Claude streaming parsing error'
+        );
+        throw error;
+      }
+
+      // Generic error
+      logger.error(
+        {
+          timestamp: new Date().toISOString(),
+          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+          errorMessage: error instanceof Error ? error.message : String(error),
+          culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
+          streaming: true,
+          success: false,
+        },
+        'Claude streaming generic error'
+      );
+
+      throw new LLMProviderError(
+        error instanceof Error ? error.message : 'Unknown streaming error',
         500,
         { error }
       );
