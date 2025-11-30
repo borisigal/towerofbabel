@@ -22,12 +22,62 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+/**
+ * Helper to create a mock fetch that handles streaming fallback and subsequent API calls.
+ * @param interpretationResponse - Response for /api/interpret
+ * @param subsequentResponses - Array of responses for subsequent calls (e.g., feedback)
+ */
+function createMockFetchWithStreamingFallback(
+  interpretationResponse: object,
+  subsequentResponses: Array<{
+    ok: boolean;
+    json: () => Promise<object>;
+  }> = []
+) {
+  let callIndex = 0;
+  return vi.fn().mockImplementation((url: string) => {
+    // Streaming endpoint always returns 503 with invalid JSON to trigger fallback
+    if (url === '/api/interpret/stream') {
+      return Promise.resolve({
+        ok: false,
+        status: 503,
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
+      });
+    }
+
+    // Buffered interpretation endpoint
+    if (url === '/api/interpret') {
+      return Promise.resolve({
+        ok: true,
+        json: async () => interpretationResponse,
+      });
+    }
+
+    // Subsequent calls (e.g., feedback)
+    if (subsequentResponses.length > 0 && callIndex < subsequentResponses.length) {
+      const response = subsequentResponses[callIndex];
+      callIndex++;
+      return Promise.resolve(response);
+    }
+
+    // Default fallback for any other calls
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+  });
+}
+
 describe('Feedback Flow - Integration Tests', () => {
   const mockInterpretationId = '123e4567-e89b-12d3-a456-426614174000';
 
   beforeEach(() => {
     vi.clearAllMocks();
     window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    // Clear sessionStorage to reset mode persistence between tests
+    window.sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -41,32 +91,32 @@ describe('Feedback Flow - Integration Tests', () => {
   it('should complete inbound interpretation and submit thumbs up feedback', async () => {
     const user = userEvent.setup();
 
-    // Mock interpretation API response with interpretationId
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretation: mockSameCultureResult,
-            interpretationId: mockInterpretationId,
-          },
-          metadata: {
-            messages_remaining: 9,
-          },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretationId: mockInterpretationId,
-            feedback: 'up',
-            timestamp: new Date().toISOString(),
-          },
-        }),
-      });
+    // Mock interpretation API response with interpretationId (via streaming fallback)
+    global.fetch = createMockFetchWithStreamingFallback(
+      {
+        success: true,
+        data: {
+          interpretation: mockSameCultureResult,
+          interpretationId: mockInterpretationId,
+        },
+        metadata: {
+          messages_remaining: 9,
+        },
+      },
+      [
+        {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              interpretationId: mockInterpretationId,
+              feedback: 'up',
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        },
+      ]
+    );
 
     render(<InterpretationForm />);
 
@@ -138,32 +188,32 @@ describe('Feedback Flow - Integration Tests', () => {
       emotions: [],
     };
 
-    // Mock API responses
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretation: mockOutboundResult,
-            interpretationId: mockInterpretationId,
-          },
-          metadata: {
-            messages_remaining: 8,
-          },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretationId: mockInterpretationId,
-            feedback: 'down',
-            timestamp: new Date().toISOString(),
-          },
-        }),
-      });
+    // Mock API responses (via streaming fallback)
+    global.fetch = createMockFetchWithStreamingFallback(
+      {
+        success: true,
+        data: {
+          interpretation: mockOutboundResult,
+          interpretationId: mockInterpretationId,
+        },
+        metadata: {
+          messages_remaining: 8,
+        },
+      },
+      [
+        {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              interpretationId: mockInterpretationId,
+              feedback: 'down',
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        },
+      ]
+    );
 
     render(<InterpretationForm />);
 
@@ -230,32 +280,32 @@ describe('Feedback Flow - Integration Tests', () => {
   it('should keep feedback buttons disabled after submission (idempotency)', async () => {
     const user = userEvent.setup();
 
-    // Mock API responses: interpretation + feedback
-    const mockFetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretation: mockSameCultureResult,
-            interpretationId: mockInterpretationId,
-          },
-          metadata: {
-            messages_remaining: 7,
-          },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretationId: mockInterpretationId,
-            feedback: 'down',
-            timestamp: new Date().toISOString(),
-          },
-        }),
-      });
+    // Mock API responses: interpretation + feedback (via streaming fallback)
+    const mockFetch = createMockFetchWithStreamingFallback(
+      {
+        success: true,
+        data: {
+          interpretation: mockSameCultureResult,
+          interpretationId: mockInterpretationId,
+        },
+        metadata: {
+          messages_remaining: 7,
+        },
+      },
+      [
+        {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              interpretationId: mockInterpretationId,
+              feedback: 'down',
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        },
+      ]
+    );
 
     global.fetch = mockFetch;
 
@@ -305,19 +355,16 @@ describe('Feedback Flow - Integration Tests', () => {
   it('should show fresh enabled feedback buttons for new interpretation', async () => {
     const user = userEvent.setup();
 
-    // Mock interpretation API response
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          interpretation: mockSameCultureResult,
-          interpretationId: '999e9999-e99b-99c9-b999-999999999999',
-        },
-        metadata: {
-          messages_remaining: 5,
-        },
-      }),
+    // Mock interpretation API response (via streaming fallback)
+    global.fetch = createMockFetchWithStreamingFallback({
+      success: true,
+      data: {
+        interpretation: mockSameCultureResult,
+        interpretationId: '999e9999-e99b-99c9-b999-999999999999',
+      },
+      metadata: {
+        messages_remaining: 5,
+      },
     });
 
     render(<InterpretationForm />);

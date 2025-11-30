@@ -382,6 +382,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 9. PERSISTENCE
     // ============================================
     // Save interpretation metadata (NO message content - privacy-first)
+    // Includes cache metrics for cost tracking
     const interpretation = await createInterpretation({
       user_id: user.id,
       culture_sender: body.sender_culture as CultureCode,
@@ -391,8 +392,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       cost_usd: result.metadata.costUsd,
       llm_provider: 'anthropic',
       response_time_ms: result.metadata.responseTimeMs,
-      tokens_input: result.metadata.tokenCount,
-      tokens_output: 0, // Will be split in future if needed
+      tokens_input: result.metadata.inputTokens,
+      tokens_output: result.metadata.outputTokens,
+      tokens_cached: result.metadata.cacheReadTokens,
     });
 
     // Increment user message count

@@ -1,5 +1,22 @@
 import '@testing-library/jest-dom';
 
+// Mock window.matchMedia for components using media queries
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {}, // deprecated
+      removeListener: () => {}, // deprecated
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
 // Polyfill for jsdom - Radix UI compatibility
 // Radix UI components use pointer capture APIs that jsdom doesn't implement
 // Only apply these polyfills if Element is defined (jsdom environment for component tests)

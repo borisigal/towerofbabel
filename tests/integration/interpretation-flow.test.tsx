@@ -22,6 +22,32 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+/**
+ * Helper to create a mock response for streaming endpoint that triggers fallback.
+ * Returns a non-OK response for /api/interpret/stream that fails JSON parsing,
+ * which triggers fallback to buffered /api/interpret endpoint.
+ */
+function createMockFetchWithStreaming(successResponse: unknown) {
+  return vi.fn().mockImplementation((url: string) => {
+    if (url === '/api/interpret/stream') {
+      // Return 503 with invalid JSON to trigger fallback to buffered endpoint
+      // The InterpretationForm code falls back when JSON parsing fails
+      return Promise.resolve({
+        ok: false,
+        status: 503,
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
+      });
+    }
+    // Buffered endpoint response
+    return Promise.resolve({
+      ok: true,
+      json: async () => successResponse,
+    });
+  });
+}
+
 describe('Interpretation Flow - Integration Tests', () => {
   beforeEach(() => {
     // Clear all mocks before each test
@@ -29,6 +55,9 @@ describe('Interpretation Flow - Integration Tests', () => {
 
     // Mock scrollIntoView (not available in jsdom)
     window.HTMLElement.prototype.scrollIntoView = vi.fn();
+
+    // Clear sessionStorage to reset mode persistence between tests
+    window.sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -40,18 +69,15 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should submit form → show loading → display results with single emotion scores', async () => {
       const user = userEvent.setup();
 
-      // Mock successful API response
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretation: mockSameCultureResult,
-          },
-          metadata: {
-            messages_remaining: 9,
-          },
-        }),
+      // Mock successful API response (via streaming fallback)
+      global.fetch = createMockFetchWithStreaming({
+        success: true,
+        data: {
+          interpretation: mockSameCultureResult,
+        },
+        metadata: {
+          messages_remaining: 9,
+        },
       });
 
       render(<InterpretationForm />);
@@ -117,18 +143,15 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should submit form → show loading → display results with dual emotion scores', async () => {
       const user = userEvent.setup();
 
-      // Mock successful cross-culture API response
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretation: mockCrossCultureResult,
-          },
-          metadata: {
-            messages_remaining: 8,
-          },
-        }),
+      // Mock successful cross-culture API response (via streaming fallback)
+      global.fetch = createMockFetchWithStreaming({
+        success: true,
+        data: {
+          interpretation: mockCrossCultureResult,
+        },
+        metadata: {
+          messages_remaining: 8,
+        },
       });
 
       render(<InterpretationForm />);
@@ -183,8 +206,8 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should show error message when API returns 401 Unauthorized', async () => {
       const user = userEvent.setup();
 
-      // Mock 401 error response
-      global.fetch = vi.fn().mockResolvedValueOnce({
+      // Mock 401 error response (streaming endpoint returns same error)
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({
@@ -223,10 +246,10 @@ describe('Interpretation Flow - Integration Tests', () => {
       const submitButton = screen.getByRole('button', { name: /^interpret$/i });
       await user.click(submitButton);
 
-      // Verify error message displays
+      // Verify error message displays (ErrorMessage component shows user-friendly text)
       await waitFor(() => {
         expect(
-          screen.getByText(/Please sign in to continue/i)
+          screen.getByText(/Your session has expired/i)
         ).toBeInTheDocument();
       });
 
@@ -239,8 +262,8 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should show error message when API returns 403 Limit Exceeded', async () => {
       const user = userEvent.setup();
 
-      // Mock 403 error response
-      global.fetch = vi.fn().mockResolvedValueOnce({
+      // Mock 403 error response (streaming endpoint returns same error)
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 403,
         json: async () => ({
@@ -279,10 +302,10 @@ describe('Interpretation Flow - Integration Tests', () => {
       const submitButton = screen.getByRole('button', { name: /^interpret$/i });
       await user.click(submitButton);
 
-      // Verify error message displays
+      // Verify error message displays (ErrorMessage component shows user-friendly text)
       await waitFor(() => {
         expect(
-          screen.getByText(/reached your message limit/i)
+          screen.getByText(/used all your free messages/i)
         ).toBeInTheDocument();
       });
     });
@@ -290,8 +313,8 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should show network error message when fetch fails', async () => {
       const user = userEvent.setup();
 
-      // Mock network error
-      global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
+      // Mock network error (affects both streaming and buffered calls)
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
       render(<InterpretationForm />);
 
@@ -320,10 +343,10 @@ describe('Interpretation Flow - Integration Tests', () => {
       const submitButton = screen.getByRole('button', { name: /^interpret$/i });
       await user.click(submitButton);
 
-      // Verify network error message displays
+      // Verify error message displays (ErrorMessage shows user-friendly text for INTERNAL_ERROR)
       await waitFor(() => {
         expect(
-          screen.getByText(/Network error.*check your connection/i)
+          screen.getByText(/encountered an unexpected error/i)
         ).toBeInTheDocument();
       });
     });
@@ -333,18 +356,15 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should persist results until new submission', async () => {
       const user = userEvent.setup();
 
-      // Mock successful API response
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            interpretation: mockSameCultureResult,
-          },
-          metadata: {
-            messages_remaining: 9,
-          },
-        }),
+      // Mock successful API response (via streaming fallback)
+      global.fetch = createMockFetchWithStreaming({
+        success: true,
+        data: {
+          interpretation: mockSameCultureResult,
+        },
+        metadata: {
+          messages_remaining: 9,
+        },
       });
 
       render(<InterpretationForm />);
@@ -403,34 +423,41 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should clear previous results when submitting new interpretation', async () => {
       const user = userEvent.setup();
 
-      // Mock first successful API response
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce({
+      // Mock two sequential interpretation requests (with streaming fallback)
+      // Tracks which buffered call we're on to return different results
+      let bufferedCallCount = 0;
+      global.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url === '/api/interpret/stream') {
+          // Streaming always fails to trigger fallback
+          return Promise.resolve({
+            ok: false,
+            status: 503,
+            json: async () => {
+              throw new Error('Invalid JSON');
+            },
+          });
+        }
+        // Buffered endpoint - return different results for each call
+        bufferedCallCount++;
+        if (bufferedCallCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              success: true,
+              data: { interpretation: mockSameCultureResult },
+              metadata: { messages_remaining: 9 },
+            }),
+          });
+        }
+        return Promise.resolve({
           ok: true,
           json: async () => ({
             success: true,
-            data: {
-              interpretation: mockSameCultureResult,
-            },
-            metadata: {
-              messages_remaining: 9,
-            },
-          }),
-        })
-        // Mock second successful API response
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            success: true,
-            data: {
-              interpretation: mockCrossCultureResult,
-            },
-            metadata: {
-              messages_remaining: 8,
-            },
+            data: { interpretation: mockCrossCultureResult },
+            metadata: { messages_remaining: 8 },
           }),
         });
+      });
 
       render(<InterpretationForm />);
 
@@ -495,28 +522,38 @@ describe('Interpretation Flow - Integration Tests', () => {
     it('should disable form inputs during loading', async () => {
       const user = userEvent.setup();
 
-      // Mock slow API response
-      global.fetch = vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: true,
-                  json: async () => ({
-                    success: true,
-                    data: {
-                      interpretation: mockSameCultureResult,
-                    },
-                    metadata: {
-                      messages_remaining: 9,
-                    },
-                  }),
+      // Mock slow API response (streaming returns 503 with invalid JSON to trigger fallback, buffered is delayed)
+      global.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url === '/api/interpret/stream') {
+          // Streaming immediately fails with invalid JSON (triggers fallback)
+          return Promise.resolve({
+            ok: false,
+            status: 503,
+            json: async () => {
+              throw new Error('Invalid JSON');
+            },
+          });
+        }
+        // Buffered endpoint is slow
+        return new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => ({
+                  success: true,
+                  data: {
+                    interpretation: mockSameCultureResult,
+                  },
+                  metadata: {
+                    messages_remaining: 9,
+                  },
                 }),
-              1000
-            )
+              }),
+            1000
           )
-      );
+        );
+      });
 
       render(<InterpretationForm />);
 
