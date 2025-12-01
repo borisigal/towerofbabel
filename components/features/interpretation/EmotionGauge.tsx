@@ -97,7 +97,7 @@ export function EmotionGauge({
           {/* Sender Culture Score */}
           <div className="space-y-1">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">In their culture:</span>
+              <span className="text-muted-foreground">In sender's culture:</span>
               <span className="font-semibold">
                 {emotion.senderScore}/10{' '}
                 <span className="text-muted-foreground">({senderIntensityLabel})</span>
@@ -106,14 +106,14 @@ export function EmotionGauge({
             <Progress
               value={emotion.senderScore * 10}
               className="h-2"
-              aria-label={`${emotion.name} in sender culture: ${emotion.senderScore} out of 10`}
+              aria-label={`${emotion.name} in sender's culture: ${emotion.senderScore} out of 10`}
             />
           </div>
 
           {/* Receiver Culture Score */}
           <div className="space-y-1">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">In your culture:</span>
+              <span className="text-muted-foreground">In receiver's culture:</span>
               <span className="font-semibold">
                 {emotion.receiverScore}/10{' '}
                 <span className="text-muted-foreground">({receiverIntensityLabel})</span>
@@ -122,7 +122,7 @@ export function EmotionGauge({
             <Progress
               value={(emotion.receiverScore || 0) * 10}
               className="h-2"
-              aria-label={`${emotion.name} in receiver culture: ${emotion.receiverScore} out of 10`}
+              aria-label={`${emotion.name} in receiver's culture: ${emotion.receiverScore} out of 10`}
             />
           </div>
         </div>

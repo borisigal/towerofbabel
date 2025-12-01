@@ -404,7 +404,7 @@ You are helping someone in ${cultureName} culture optimize a message they want t
 
 Analyze the message and provide:
 1. **Original Analysis**: Explain how the message will likely be perceived by the receiver (2-3 sentences)
-2. **Suggestions**: List 3-5 specific ways to improve the message (be concrete, not vague)
+2. **Suggestion**: Provide 1 key suggestion to improve the message (be concrete and actionable)
 3. **Optimized Message**: Provide a culturally optimized version that's clearer and better received
 4. **Emotions**: Detect the top 3 emotions present in the ORIGINAL message
 
@@ -416,11 +416,7 @@ ${message}
 ### Required JSON Response Format
 {
   "originalAnalysis": "How the receiver will likely perceive this message (2-3 sentences)",
-  "suggestions": [
-    "Specific improvement 1: [concrete suggestion]",
-    "Specific improvement 2: [concrete suggestion]",
-    "Specific improvement 3: [concrete suggestion]"
-  ],
+  "suggestions": ["The single most important improvement suggestion"],
   "optimizedMessage": "The improved version of the message that will be better received",
   "emotions": [
     {
@@ -431,7 +427,7 @@ ${message}
   ]
 }
 
-IMPORTANT: Include 3-5 suggestions. For same culture, only include senderScore (not receiverScore).`;
+IMPORTANT: Include exactly 1 suggestion. For same culture, only include senderScore (not receiverScore).`;
 }
 
 /**
@@ -466,7 +462,7 @@ You are helping someone in ${cultureName} culture optimize a message they want t
 
 Analyze the message and provide:
 1. **Original Analysis**: Explain how the message will likely be perceived by the receiver (2-3 sentences, explain like you're talking to a 14-year-old)
-2. **Suggestions**: List 3-5 specific ways to improve the message (be concrete, not vague)
+2. **Suggestion**: Provide 1 key suggestion to improve the message (be concrete and actionable)
 3. **Optimized Message**: Provide a culturally optimized version that's clearer, more appropriate, and better received
 4. **Emotions**: Detect the top 3 emotions present in the ORIGINAL message (detect these dynamically, don't use a preset list)
 
@@ -478,11 +474,7 @@ ${message}
 Provide your analysis in the following JSON format (return ONLY the JSON, no other text):
 {
   "originalAnalysis": "How the receiver will likely perceive this message (2-3 sentences)",
-  "suggestions": [
-    "Specific improvement 1: [concrete suggestion]",
-    "Specific improvement 2: [concrete suggestion]",
-    "Specific improvement 3: [concrete suggestion]"
-  ],
+  "suggestions": ["The single most important improvement suggestion"],
   "optimizedMessage": "The improved version of the message that will be better received",
   "emotions": [
     {
@@ -495,7 +487,7 @@ Provide your analysis in the following JSON format (return ONLY the JSON, no oth
 
 IMPORTANT:
 - Return ONLY the JSON object, no markdown formatting, no code blocks, no additional text
-- Include 3-5 suggestions (minimum 3, maximum 5)
+- Include exactly 1 suggestion
 - Suggestions must be specific and actionable (not vague like "be nicer")
 - optimizedMessage should feel natural, not robotic or overly formal
 - Include exactly 3 emotions (top 3 most relevant in the ORIGINAL message)
@@ -532,7 +524,7 @@ This is a CROSS-CULTURE message. Focus on:
 
 Provide:
 1. **Original Analysis**: Explain how the ${receiverCultureName} receiver will likely perceive this ${senderCultureName}-style message
-2. **Suggestions**: List 3-5 culturally-specific improvements
+2. **Suggestion**: Provide 1 key culturally-specific improvement (be concrete and actionable)
 3. **Optimized Message**: Provide a culturally optimized version
 4. **Emotions**: Detect the top 3 emotions with BOTH sender and receiver intensity scores
 
@@ -544,14 +536,14 @@ ${message}
 ### Required JSON Response Format
 {
   "originalAnalysis": "How this message will likely be perceived by the ${receiverCultureName} receiver",
-  "suggestions": ["Cultural improvement 1", "Cultural improvement 2", "Cultural improvement 3"],
+  "suggestions": ["The single most important cultural improvement"],
   "optimizedMessage": "The culturally adapted version",
   "emotions": [
     { "name": "Emotion", "senderScore": 7, "receiverScore": 3, "explanation": "..." }
   ]
 }
 
-IMPORTANT: Include 3-5 suggestions. For cross-culture, include BOTH senderScore and receiverScore.`;
+IMPORTANT: Include exactly 1 suggestion. For cross-culture, include BOTH senderScore and receiverScore.`;
 }
 
 /**
@@ -595,7 +587,7 @@ This is a CROSS-CULTURE message. Focus on:
 
 Provide:
 1. **Original Analysis**: Explain how the ${receiverCultureName} receiver will likely perceive this ${senderCultureName}-style message (3-4 sentences, explain like you're talking to a 14-year-old)
-2. **Suggestions**: List 3-5 culturally-specific improvements that bridge the gap between ${senderCultureName} and ${receiverCultureName} communication styles
+2. **Suggestion**: Provide 1 key culturally-specific improvement that bridges the gap between ${senderCultureName} and ${receiverCultureName} communication styles
 3. **Optimized Message**: Provide a culturally optimized version that resonates with ${receiverCultureName} culture while preserving the sender's intent
 4. **Emotions**: Detect the top 3 emotions with BOTH sender and receiver intensity scores (how intense in each culture)
 
@@ -607,11 +599,7 @@ ${message}
 Provide your analysis in the following JSON format (return ONLY the JSON, no other text):
 {
   "originalAnalysis": "How this message will likely be perceived by the ${receiverCultureName} receiver, including potential cultural misunderstandings (3-4 sentences)",
-  "suggestions": [
-    "Cultural improvement 1: [specific to ${receiverCultureName} culture]",
-    "Cultural improvement 2: [bridges gap between cultures]",
-    "Cultural improvement 3: [adapts communication style]"
-  ],
+  "suggestions": ["The single most important cultural improvement"],
   "optimizedMessage": "The culturally adapted version that will resonate with ${receiverCultureName} receiver",
   "emotions": [
     {
@@ -625,7 +613,7 @@ Provide your analysis in the following JSON format (return ONLY the JSON, no oth
 
 IMPORTANT:
 - Return ONLY the JSON object, no markdown formatting, no code blocks, no additional text
-- Include 3-5 suggestions (minimum 3, maximum 5)
+- Include exactly 1 suggestion
 - Suggestions must be culturally specific (not generic advice)
 - optimizedMessage should adapt to ${receiverCultureName} communication norms
 - Include exactly 3 emotions (top 3 most relevant in the ORIGINAL message)

@@ -55,18 +55,20 @@ export function OutboundAnalysis({
       </section>
 
       {/* Suggestions Section */}
-      <section>
-        <h3 className="text-lg sm:text-xl font-semibold mb-3 text-foreground flex items-center gap-2">
-          💡 Suggestions
-        </h3>
-        <ul className="space-y-2 text-foreground/80 list-disc list-inside">
-          {suggestions.map((suggestion, index) => (
-            <li key={index} className="text-base leading-relaxed">
-              {suggestion}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {suggestions && suggestions.length > 0 && (
+        <section>
+          <h3 className="text-lg sm:text-xl font-semibold mb-3 text-foreground flex items-center gap-2">
+            💡 Suggestion
+          </h3>
+          <ul className="space-y-2 text-foreground/80 list-disc list-inside">
+            {suggestions.map((suggestion, index) => (
+              <li key={index} className="text-base leading-relaxed">
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Top 3 Emotions Section */}
       <section>

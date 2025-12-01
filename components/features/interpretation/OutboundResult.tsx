@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MessageComparison } from './MessageComparison';
 import { OutboundAnalysis } from './OutboundAnalysis';
 import { FeedbackButtons } from './FeedbackButtons';
 import { type OutboundInterpretationResponse } from '@/lib/llm/types';
@@ -104,33 +103,42 @@ export function OutboundResult({
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div className="space-y-6">
-        {/* Message Comparison - Side by Side */}
-        <MessageComparison
-          originalMessage={originalMessage}
-          optimizedMessage={optimizedMessage}
-        />
-
-        {/* Copy Button */}
-        <div className="flex justify-end">
-          <Button
-            onClick={handleCopyToClipboard}
-            disabled={copied}
-            variant="outline"
-            className="min-h-[44px]"
-            aria-label="Copy optimized message to clipboard"
-          >
-            {copied ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Optimized Message
-              </>
-            )}
-          </Button>
+        {/* Optimized Message Section */}
+        <div
+          className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg p-4"
+          role="region"
+          aria-label="Optimized message"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-foreground">
+              Culturally Optimized Version
+            </h3>
+            <Button
+              onClick={handleCopyToClipboard}
+              disabled={copied}
+              variant="outline"
+              size="sm"
+              className="min-h-[36px]"
+              aria-label="Copy optimized message to clipboard"
+            >
+              {copied ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="max-h-[300px] overflow-y-auto">
+            <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
+              {optimizedMessage}
+            </p>
+          </div>
         </div>
 
         {/* Analysis Section */}

@@ -84,7 +84,6 @@ export function StreamingResult({
           <OutboundStreamingSkeleton
             partialResult={partialResult as PartialOutboundResult}
             isStreaming={isStreaming}
-            originalMessage={originalMessage || ''}
           />
         </div>
       );
