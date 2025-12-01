@@ -97,7 +97,7 @@ export function EmotionGauge({
           {/* Sender Culture Score */}
           <div className="space-y-1">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">In sender's culture:</span>
+              <span className="text-muted-foreground">In sender&apos;s culture:</span>
               <span className="font-semibold">
                 {emotion.senderScore}/10{' '}
                 <span className="text-muted-foreground">({senderIntensityLabel})</span>
@@ -113,7 +113,7 @@ export function EmotionGauge({
           {/* Receiver Culture Score */}
           <div className="space-y-1">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">In receiver's culture:</span>
+              <span className="text-muted-foreground">In receiver&apos;s culture:</span>
               <span className="font-semibold">
                 {emotion.receiverScore}/10{' '}
                 <span className="text-muted-foreground">({receiverIntensityLabel})</span>

@@ -48,7 +48,7 @@ interface OutboundResultProps {
  */
 export function OutboundResult({
   result,
-  originalMessage,
+  originalMessage: _originalMessage,
   messagesRemaining,
   interpretationId,
 }: OutboundResultProps): JSX.Element {
