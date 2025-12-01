@@ -169,8 +169,9 @@ function validateOutboundResponse(
     );
   }
 
-  if (parsed.suggestions.length < 3 || parsed.suggestions.length > 5) {
-    throw new LLMParsingError('Suggestions array must contain 3-5 items', {
+  // Relax validation: accept 1-5 suggestions (LLM doesn't always return 3+)
+  if (parsed.suggestions.length < 1 || parsed.suggestions.length > 5) {
+    throw new LLMParsingError('Suggestions array must contain 1-5 items', {
       parsed,
       suggestionsCount: parsed.suggestions.length,
     });
@@ -773,18 +774,34 @@ export class AnthropicAdapter implements LLMAdapter {
     } catch (error) {
       clearTimeout(timeoutId);
 
-      // Handle abort/timeout
-      if (error instanceof Error && error.name === 'AbortError') {
+      // Debug: Log the raw error for troubleshooting
+      console.error('[Stream] Raw error caught:', {
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        errorName: error instanceof Error ? error.name : 'N/A',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        isAnthropicError: error instanceof Anthropic.APIError,
+      });
+
+      // Handle abort/timeout - check multiple ways abort errors can appear
+      // The Anthropic SDK may throw errors with "aborted" in the message
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorName = error instanceof Error ? error.name : '';
+      const isAbortError =
+        errorName === 'AbortError' ||
+        errorMessage.toLowerCase().includes('aborted') ||
+        errorMessage.toLowerCase().includes('abort');
+
+      if (isAbortError) {
         logger.error(
           {
             timestamp: new Date().toISOString(),
             errorType: 'LLMTimeoutError',
-            errorMessage: 'Streaming request timed out',
+            errorMessage: 'Streaming request timed out or was aborted',
             culturePair: `${request.senderCulture} → ${request.receiverCulture}`,
             streaming: true,
             success: false,
           },
-          'Claude streaming timeout error'
+          'Claude streaming timeout/abort error'
         );
         throw new LLMTimeoutError();
       }

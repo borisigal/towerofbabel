@@ -446,17 +446,25 @@ export async function POST(req: NextRequest): Promise<Response> {
         'Streaming interpretation successful'
       );
     } catch (error) {
+      // Log to console for debugging (logger worker may crash)
+      console.error('=== STREAMING ERROR ===');
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Full error:', error);
+      console.error('========================');
+
       logger.error(
         { error, userId, streaming: true },
         'Streaming interpretation failed'
       );
 
-      // Send error event to client
+      // Send error event to client with more details
+      const errorMessage = error instanceof Error ? error.message : 'Streaming failed. Please try again.';
       const errorData: SSEEventData = {
         type: 'error',
         error: {
           code: 'STREAM_ERROR',
-          message: 'Streaming failed. Please try again.',
+          message: errorMessage,
         },
       };
       await writer.write(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`));

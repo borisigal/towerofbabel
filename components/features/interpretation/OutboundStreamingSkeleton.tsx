@@ -18,8 +18,6 @@ interface OutboundStreamingSkeletonProps {
   partialResult: PartialOutboundResult;
   /** Whether actively receiving stream chunks */
   isStreaming: boolean;
-  /** User's original message (always available from form) */
-  originalMessage: string;
 }
 
 /**
@@ -140,7 +138,6 @@ function EmotionGaugeSkeleton({ index }: { index: number }): JSX.Element {
 export function OutboundStreamingSkeleton({
   partialResult,
   isStreaming,
-  originalMessage,
 }: OutboundStreamingSkeletonProps): JSX.Element {
   const { originalAnalysis, suggestions, optimizedMessage, emotions } = partialResult;
 
@@ -156,55 +153,36 @@ export function OutboundStreamingSkeleton({
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div className="space-y-6" aria-busy={isStreaming} aria-live="polite">
-        {/* Message Comparison - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left Panel: Original Message (always available) */}
-          <div
-            className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-lg p-4"
-            role="region"
-            aria-label="Original message"
-          >
-            <h3 className="text-lg font-semibold mb-3 text-foreground">
-              Your Original Message
-            </h3>
-            <div className="max-h-[300px] overflow-y-auto">
+        {/* Optimized Message Section */}
+        <div
+          className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg p-4"
+          role="region"
+          aria-label="Optimized message"
+        >
+          <h3 className="text-lg font-semibold mb-3 text-foreground">
+            Culturally Optimized Version
+          </h3>
+          <div className="max-h-[300px] overflow-y-auto">
+            {optimizedMessageComplete ? (
               <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                {originalMessage}
+                <TypedText
+                  content={optimizedMessage}
+                  showCursor={isStreaming && !emotionsComplete}
+                />
               </p>
-            </div>
-          </div>
-
-          {/* Right Panel: Optimized Message */}
-          <div
-            className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg p-4"
-            role="region"
-            aria-label="Optimized message"
-          >
-            <h3 className="text-lg font-semibold mb-3 text-foreground">
-              Culturally Optimized Version
-            </h3>
-            <div className="max-h-[300px] overflow-y-auto">
-              {optimizedMessageComplete ? (
-                <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                  <TypedText
-                    content={optimizedMessage}
-                    showCursor={isStreaming && !emotionsComplete}
-                  />
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  {isStreaming && (
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm mt-3">
-                      <Spinner size="sm" />
-                      <span>Optimizing message...</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                {isStreaming && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mt-3">
+                    <Spinner size="sm" />
+                    <span>Optimizing message...</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

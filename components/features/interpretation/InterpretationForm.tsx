@@ -63,21 +63,40 @@ interface InterpretationFormData {
  * Story 2.4: Added proper result display UI
  * Story 4.1: Added mode toggle (inbound/outbound)
  */
+/**
+ * State for a single tab (inbound or outbound)
+ */
+interface TabState {
+  result: InboundInterpretationResponse | OutboundInterpretationResponse | null;
+  error: { code: string; message: string } | null;
+  isComplete: boolean;
+  streamingText: string;
+  isStreaming: boolean;
+  interpretationId: string | null;
+  originalMessage: string;
+}
+
+const initialTabState: TabState = {
+  result: null,
+  error: null,
+  isComplete: false,
+  streamingText: '',
+  isStreaming: false,
+  interpretationId: null,
+  originalMessage: '',
+};
+
 export function InterpretationForm(): JSX.Element {
   const router = useRouter();
   const { incrementUsage } = useUsageStore();
   const { setOpen: setUpgradeModalOpen } = useUpgradeModalStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<InboundInterpretationResponse | OutboundInterpretationResponse | null>(null);
   const [messagesRemaining, setMessagesRemaining] = useState<number | undefined>(undefined);
-  const [error, setError] = useState<{ code: string; message: string } | null>(null);
-  const [originalMessage, setOriginalMessage] = useState<string>('');
-  const [interpretationId, setInterpretationId] = useState<string | null>(null);
 
-  // Streaming state (Story 6.1)
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
-  const [isComplete, setIsComplete] = useState(false);
+  // Separate state for each tab
+  const [inboundState, setInboundState] = useState<TabState>(initialTabState);
+  const [outboundState, setOutboundState] = useState<TabState>(initialTabState);
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Cleanup on unmount - cancel any in-flight streaming request
@@ -89,6 +108,18 @@ export function InterpretationForm(): JSX.Element {
 
   // Mode state with sessionStorage persistence (Story 4.1)
   const [mode, setMode] = useState<InterpretationMode>('inbound');
+
+  // Get current tab state based on mode
+  const currentState = mode === 'inbound' ? inboundState : outboundState;
+  const setCurrentState = mode === 'inbound' ? setInboundState : setOutboundState;
+
+  // Destructure current state for easier access
+  const { result, error, isComplete, streamingText, isStreaming, interpretationId, originalMessage } = currentState;
+
+  // Helper to update specific fields in current tab state
+  const updateCurrentState = (updates: Partial<TabState>) => {
+    setCurrentState(prev => ({ ...prev, ...updates }));
+  };
 
   // Restore mode from sessionStorage on mount
   useEffect(() => {
@@ -138,11 +169,9 @@ export function InterpretationForm(): JSX.Element {
     ? 'Paste the message you want to interpret...'
     : 'Paste the message you want to send...';
 
-  const senderLabel = mode === 'inbound'
-    ? "Sender's Culture"
-    : "Your Culture";
-
-  const receiverLabel = "Receiver's Culture"; // Same for both modes
+  // Use consistent terminology for both modes
+  const senderLabel = "Sender's Culture";
+  const receiverLabel = "Receiver's Culture";
 
   const submitButtonLabel = mode === 'inbound'
     ? 'Interpret'
@@ -179,9 +208,11 @@ export function InterpretationForm(): JSX.Element {
         if (errorCode === 'LIMIT_EXCEEDED' || errorCode === 'TRIAL_EXPIRED') {
           log.info('Usage limit reached, opening upgrade modal', { errorCode });
           setUpgradeModalOpen(true, 'limit_exceeded');
-          setError({
-            code: errorCode,
-            message: responseData.error?.message || 'Usage limit reached. Please upgrade to continue.',
+          updateCurrentState({
+            error: {
+              code: errorCode,
+              message: responseData.error?.message || 'Usage limit reached. Please upgrade to continue.',
+            },
           });
           return;
         }
@@ -193,10 +224,12 @@ export function InterpretationForm(): JSX.Element {
           messagesRemaining: responseData.metadata?.messages_remaining,
         });
 
-        setResult(responseData.data.interpretation);
-        setInterpretationId(responseData.data.interpretationId);
+        updateCurrentState({
+          result: responseData.data.interpretation,
+          interpretationId: responseData.data.interpretationId,
+          isComplete: true,
+        });
         setMessagesRemaining(responseData.metadata?.messages_remaining);
-        setIsComplete(true);
 
         incrementUsage();
         router.refresh();
@@ -210,22 +243,26 @@ export function InterpretationForm(): JSX.Element {
         }, 100);
       } else {
         log.error('Buffered interpretation failed', { error: responseData.error });
-        setError({
-          code: responseData.error?.code || 'INTERNAL_ERROR',
-          message: responseData.error?.message || 'Interpretation failed. Please try again.',
+        updateCurrentState({
+          error: {
+            code: responseData.error?.code || 'INTERNAL_ERROR',
+            message: responseData.error?.message || 'Interpretation failed. Please try again.',
+          },
         });
       }
     } catch (err) {
       log.error('Buffered request failed', {
         error: err instanceof Error ? err.message : 'Unknown error',
       });
-      setError({
-        code: 'INTERNAL_ERROR',
-        message: 'Network error. Please check your connection and try again.',
+      updateCurrentState({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Network error. Please check your connection and try again.',
+        },
       });
     } finally {
       setIsLoading(false);
-      setIsStreaming(false);
+      updateCurrentState({ isStreaming: false });
     }
   };
 
@@ -249,6 +286,23 @@ export function InterpretationForm(): JSX.Element {
   };
 
   /**
+   * Cancel handler - aborts the current streaming request.
+   */
+  const handleCancel = (): void => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    updateCurrentState({
+      isStreaming: false,
+      streamingText: '',
+      isComplete: false,
+    });
+    log.info('Interpretation cancelled by user', { mode });
+  };
+
+  /**
    * Form submission handler with streaming support (Story 6.1).
    * Calls /api/interpret/stream endpoint with SSE response.
    * Falls back to /api/interpret on streaming failure.
@@ -261,17 +315,15 @@ export function InterpretationForm(): JSX.Element {
     abortControllerRef.current = new AbortController();
 
     // Clear previous results/errors and set initial streaming state
-    setResult(null);
-    setError(null);
     setIsLoading(true);
-    setIsStreaming(true);
-    setIsComplete(false);
-    setStreamingText('');
-
-    // Store original message for outbound display
-    if (mode === 'outbound') {
-      setOriginalMessage(data.message);
-    }
+    updateCurrentState({
+      result: null,
+      error: null,
+      isStreaming: true,
+      isComplete: false,
+      streamingText: '',
+      originalMessage: mode === 'outbound' ? data.message : '',
+    });
 
     log.info('Submitting streaming interpretation request', {
       messageLength: data.message.length,
@@ -306,29 +358,32 @@ export function InterpretationForm(): JSX.Element {
             if (errorCode === 'LIMIT_EXCEEDED' || errorCode === 'TRIAL_EXPIRED') {
               log.info('Usage limit reached, opening upgrade modal', { errorCode });
               setUpgradeModalOpen(true, 'limit_exceeded');
-              setError({
-                code: errorCode,
-                message: errorData.error?.message || 'Usage limit reached. Please upgrade to continue.',
+              updateCurrentState({
+                error: {
+                  code: errorCode,
+                  message: errorData.error?.message || 'Usage limit reached. Please upgrade to continue.',
+                },
+                isStreaming: false,
               });
               setIsLoading(false);
-              setIsStreaming(false);
               return;
             }
           }
 
           // Other errors - set error state
-          setError({
-            code: errorData.error?.code || 'STREAM_ERROR',
-            message: errorData.error?.message || 'Streaming failed. Please try again.',
+          updateCurrentState({
+            error: {
+              code: errorData.error?.code || 'STREAM_ERROR',
+              message: errorData.error?.message || 'Streaming failed. Please try again.',
+            },
+            isStreaming: false,
           });
           setIsLoading(false);
-          setIsStreaming(false);
           return;
         } catch {
           // Couldn't parse error, fall back to buffered
           log.warn('Streaming endpoint returned non-OK response', { status: response.status });
-          setStreamingText('');
-          setIsStreaming(false);
+          updateCurrentState({ streamingText: '', isStreaming: false });
           return await submitBuffered(data);
         }
       }
@@ -351,8 +406,7 @@ export function InterpretationForm(): JSX.Element {
           log.error('Stream interrupted', {
             error: streamError instanceof Error ? streamError.message : 'Unknown error',
           });
-          setStreamingText('');
-          setIsStreaming(false);
+          updateCurrentState({ streamingText: '', isStreaming: false });
           return await submitBuffered(data);
         }
 
@@ -372,7 +426,7 @@ export function InterpretationForm(): JSX.Element {
           if (!eventData) continue;
 
           if (eventData.type === 'text') {
-            setStreamingText((prev) => prev + eventData.text);
+            setCurrentState(prev => ({ ...prev, streamingText: prev.streamingText + eventData.text }));
           }
 
           if (eventData.type === 'complete') {
@@ -382,12 +436,14 @@ export function InterpretationForm(): JSX.Element {
               streaming: true,
             });
 
-            setIsStreaming(false);
-            setStreamingText('');
-            setResult(eventData.interpretation);
-            setInterpretationId(eventData.interpretationId || null);
+            updateCurrentState({
+              isStreaming: false,
+              streamingText: '',
+              result: eventData.interpretation,
+              interpretationId: eventData.interpretationId || null,
+              isComplete: true,
+            });
             setMessagesRemaining(eventData.metadata?.messages_remaining);
-            setIsComplete(true);
 
             incrementUsage();
             router.refresh();
@@ -403,9 +459,11 @@ export function InterpretationForm(): JSX.Element {
 
           if (eventData.type === 'error') {
             log.error('Streaming returned error event', { error: eventData.error });
-            setIsStreaming(false);
-            setStreamingText('');
-            setError(eventData.error);
+            updateCurrentState({
+              isStreaming: false,
+              streamingText: '',
+              error: eventData.error,
+            });
           }
         }
       }
@@ -420,8 +478,7 @@ export function InterpretationForm(): JSX.Element {
       log.error('Streaming failed', {
         error: err instanceof Error ? err.message : 'Unknown error',
       });
-      setStreamingText('');
-      setIsStreaming(false);
+      updateCurrentState({ streamingText: '', isStreaming: false });
       await submitBuffered(data);
     } finally {
       setIsLoading(false);
@@ -434,7 +491,10 @@ export function InterpretationForm(): JSX.Element {
         {/* Mode Toggle - Story 4.1 */}
         <Tabs
           value={mode}
-          onValueChange={(value) => setMode(value as InterpretationMode)}
+          onValueChange={(value) => {
+            // Just switch mode - each tab maintains its own state
+            setMode(value as InterpretationMode);
+          }}
           className="mb-6"
         >
           <TabsList className="grid w-full grid-cols-2 h-11" aria-label="Interpretation mode toggle">
@@ -538,8 +598,18 @@ export function InterpretationForm(): JSX.Element {
             </div>
           </div>
 
-          {/* Submit Button with Loading State and Tooltip */}
-          <div className="flex justify-end">
+          {/* Submit and Cancel Buttons */}
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={!isLoading}
+              className="w-full sm:w-auto min-h-[44px] px-6 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 disabled:opacity-50 disabled:border-red-300 disabled:text-red-600 dark:disabled:border-red-700 dark:disabled:text-red-400"
+              aria-label="Cancel interpretation"
+            >
+              Cancel
+            </Button>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -579,7 +649,7 @@ export function InterpretationForm(): JSX.Element {
         <ErrorMessage
           error={error}
           onRetry={() => {
-            setError(null);
+            updateCurrentState({ error: null });
             handleSubmit(onSubmit)();
           }}
         />
