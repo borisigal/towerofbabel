@@ -13,7 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CultureSelector } from './CultureSelector';
 import { ErrorMessage } from './ErrorMessage';
 import { InterpretationResultsSkeleton } from './InterpretationResultsSkeleton';
@@ -174,8 +173,8 @@ export function InterpretationForm(): JSX.Element {
   const receiverLabel = "Receiver's Culture";
 
   const submitButtonLabel = mode === 'inbound'
-    ? 'Interpret'
-    : 'Optimize';
+    ? 'Interpret Message'
+    : 'Optimize Message';
 
   const loadingButtonLabel = mode === 'inbound'
     ? 'Interpreting...'
@@ -486,78 +485,95 @@ export function InterpretationForm(): JSX.Element {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
-        {/* Mode Toggle - Story 4.1 */}
-        <Tabs
-          value={mode}
-          onValueChange={(value) => {
-            // Just switch mode - each tab maintains its own state
-            setMode(value as InterpretationMode);
-          }}
-          className="mb-6"
-        >
-          <TabsList className="grid w-full grid-cols-2 h-11" aria-label="Interpretation mode toggle">
-            <TabsTrigger value="inbound" className="min-h-[44px]">
-              Inbound
-            </TabsTrigger>
-            <TabsTrigger value="outbound" className="min-h-[44px]">
-              Outbound
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="w-full mx-auto py-4">
+      <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 sm:p-8">
+        {/* Header with Title and Mode Toggle - Story 4.1 */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <h2 className="text-2xl font-semibold text-white">
+            Interpret Message
+          </h2>
+          <div className="flex gap-2">
+            {(['inbound', 'outbound'] as const).map((tabMode) => {
+              const isActive = mode === tabMode;
+              const label = tabMode === 'inbound' ? 'Interpret Message' : 'Optimize Message';
+              const baseStyles = 'px-6 py-2.5 rounded-lg font-medium transition-all min-h-[44px]';
+              const activeStyles = 'bg-blue-500 text-white';
+              const inactiveStyles = 'bg-transparent border border-white/30 text-white/70 hover:border-white/50 hover:text-white';
 
-        <h2 className="text-2xl font-semibold mb-6 text-white">
-          {mode === 'inbound' ? 'Interpret Message' : 'Optimize Message'}
-        </h2>
+              return (
+                <button
+                  key={tabMode}
+                  type="button"
+                  onClick={() => setMode(tabMode)}
+                  className={`${baseStyles} ${isActive ? activeStyles : inactiveStyles}`}
+                  aria-pressed={isActive}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Message Textarea with Character Counter */}
           <div className="space-y-2">
-            <Label htmlFor="message" className="text-base font-medium text-white">
-              Message to {mode === 'inbound' ? 'Interpret' : 'Optimize'}
+            <Label htmlFor="message" className="text-base font-semibold text-white">
+              Input Message
             </Label>
-            <Textarea
-              id="message"
-              placeholder={textareaPlaceholder}
-              className="min-h-[150px] sm:min-h-[200px] resize-none"
-              aria-label={`Message to ${mode === 'inbound' ? 'interpret' : 'optimize'}`}
-              aria-describedby="character-counter"
-              disabled={isLoading}
-              {...register('message', {
-                required: 'Message is required',
-                maxLength: {
-                  value: 2000,
-                  message: 'Message must be 2000 characters or less',
-                },
-              })}
-            />
-
-            {/* Character Counter */}
-            <div
-              id="character-counter"
-              aria-live="polite"
-              className={`text-sm ${
-                isOverLimit
-                  ? 'text-red-300 font-semibold'
-                  : 'text-white/60'
-              }`}
-            >
-              {characterCount} / 2,000 characters
-              {isOverLimit && ' - Message too long'}
+            <div className="relative">
+              <Textarea
+                id="message"
+                placeholder={textareaPlaceholder}
+                className="min-h-[300px] sm:min-h-[360px] resize-none bg-transparent border border-blue-500/50 rounded-lg focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 text-white placeholder:text-white/40 pr-16"
+                style={{ textIndent: !message ? '28px' : '0' }}
+                aria-label={`Message to ${mode === 'inbound' ? 'interpret' : 'optimize'}`}
+                aria-describedby="character-counter"
+                disabled={isLoading}
+                {...register('message', {
+                  required: 'Message is required',
+                  maxLength: {
+                    value: 2000,
+                    message: 'Message must be 2000 characters or less',
+                  },
+                })}
+              />
+              {/* Sparkle/Edit icon - positioned at start of placeholder, vertically centered with first line */}
+              {!message && (
+                <div className="absolute top-[11px] left-3 pointer-events-none flex items-center">
+                  <svg width="19" height="20" viewBox="0 0 19 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M2.83125 11.39L2.89125 11.27C3.14125 10.785 3.53625 10.39 4.02125 10.14L4.14125 10.08C4.61625 9.84 4.61625 9.16 4.14125 8.915L4.02125 8.855C3.53625 8.605 3.14125 8.21 2.89125 7.725L2.83125 7.605C2.59125 7.13 1.91125 7.13 1.66625 7.605L1.60625 7.725C1.35625 8.21 0.96125 8.605 0.47625 8.855L0.35625 8.915C-0.11875 9.155 -0.11875 9.835 0.35625 10.08L0.47625 10.14C0.96125 10.39 1.35625 10.785 1.60625 11.27L1.66625 11.39C1.90625 11.865 2.58625 11.865 2.83125 11.39Z" fill="#BB9DF6"/>
+                    <path d="M17.1462 15.415L17.0262 15.355C16.5412 15.105 16.1462 14.71 15.8962 14.225L15.8362 14.105C15.5962 13.63 14.9162 13.63 14.6712 14.105L14.6112 14.225C14.3612 14.71 13.9662 15.105 13.4812 15.355L13.3612 15.415C12.8862 15.655 12.8862 16.335 13.3612 16.58L13.4812 16.64C13.9662 16.89 14.3612 17.285 14.6112 17.77L14.6712 17.89C14.9112 18.365 15.5912 18.365 15.8362 17.89L15.8962 17.77C16.1462 17.285 16.5412 16.89 17.0262 16.64L17.1462 16.58C17.6212 16.34 17.6212 15.66 17.1462 15.415Z" fill="#BB9DF6"/>
+                    <path d="M3.21125 5.135L3.37125 5.215C3.87125 5.47 4.27125 5.87 4.52625 6.37L4.60625 6.53C4.88125 7.07 5.43125 7.405 6.03625 7.405C6.64125 7.405 7.19125 7.07 7.47125 6.53L7.55125 6.37C7.80625 5.87 8.20625 5.47 8.70625 5.215L8.86625 5.135C9.40625 4.86 9.74125 4.31 9.74125 3.705C9.74125 3.1 9.40625 2.55 8.86625 2.27L8.70625 2.19C8.20625 1.935 7.80625 1.535 7.55125 1.035L7.47125 0.875C7.19625 0.335 6.64625 0 6.03625 0C5.42625 0 4.88125 0.335 4.60125 0.875L4.52125 1.035C4.26625 1.535 3.86625 1.935 3.36625 2.19L3.20625 2.27C2.66625 2.545 2.33125 3.095 2.33125 3.705C2.33125 4.315 2.66625 4.86 3.20625 5.14L3.21125 5.135ZM3.89125 3.605L4.05125 3.525C4.83625 3.125 5.46125 2.5 5.86125 1.715L5.94125 1.555C5.94125 1.555 5.97125 1.495 6.03625 1.495C6.10125 1.495 6.12625 1.535 6.13125 1.555L6.21125 1.715C6.61125 2.5 7.23625 3.125 8.02125 3.525L8.18125 3.605C8.18125 3.605 8.24125 3.635 8.24125 3.7C8.24125 3.765 8.19625 3.79 8.18125 3.795L8.02125 3.875C7.23625 4.275 6.61125 4.9 6.21125 5.685L6.13125 5.845C6.13125 5.845 6.10125 5.905 6.03625 5.905C5.97125 5.905 5.94625 5.86 5.94125 5.845L5.86125 5.685C5.46125 4.9 4.83625 4.275 4.05125 3.875L3.89125 3.795C3.89125 3.795 3.83125 3.765 3.83125 3.7C3.83125 3.635 3.87625 3.61 3.89125 3.605Z" fill="#BB9DF6"/>
+                    <path d="M18.1462 4.07L17.1762 3.1C16.7862 2.71 16.2663 2.495 15.7163 2.495C15.1663 2.495 14.6462 2.71 14.2562 3.1L3.87125 13.485C3.87125 13.485 3.86125 13.5 3.85625 13.51C3.79625 13.575 3.74625 13.645 3.71125 13.725V13.735L2.26625 17.18C2.04125 17.715 2.16625 18.325 2.58125 18.735C2.85125 19 3.20625 19.14 3.57125 19.14C3.76125 19.14 3.95625 19.1 4.14125 19.02L7.51625 17.54L7.53625 17.53C7.61625 17.495 7.68125 17.445 7.74125 17.39C7.74625 17.385 7.75625 17.38 7.76625 17.375L18.1512 6.99C18.5412 6.6 18.7562 6.08 18.7562 5.53C18.7562 4.98 18.5412 4.46 18.1512 4.07H18.1462ZM7.23125 15.785L5.46125 14.015L13.2413 6.235L15.0113 8.005L7.23125 15.785ZM17.0862 5.93L16.0712 6.945L14.3012 5.175L15.3163 4.16C15.5263 3.945 15.9012 3.945 16.1162 4.16L17.0862 5.13C17.1912 5.235 17.2512 5.38 17.2512 5.53C17.2512 5.68 17.1912 5.82 17.0862 5.93Z" fill="#BB9DF6"/>
+                  </svg>
+                </div>
+              )}
+              {/* Character Counter - positioned bottom right inside textarea */}
+              <div
+                id="character-counter"
+                aria-live="polite"
+                className={`absolute bottom-3 right-3 text-sm ${
+                  isOverLimit
+                    ? 'text-red-400 font-semibold'
+                    : 'text-white/40'
+                }`}
+              >
+                {characterCount}/2000
+              </div>
             </div>
 
             {errors.message && (
-              <p className="text-sm text-red-300" role="alert">
+              <p className="text-sm text-red-400" role="alert">
                 {errors.message.message}
               </p>
             )}
           </div>
 
           {/* Culture Selectors - Stack on mobile, side-by-side on desktop */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-6">
             <div className="flex-1 space-y-2">
-              <Label htmlFor="sender-culture" className="text-base font-medium text-white">
+              <Label htmlFor="sender-culture" className="text-base font-semibold text-white">
                 {senderLabel}
               </Label>
               <CultureSelector
@@ -566,10 +582,10 @@ export function InterpretationForm(): JSX.Element {
                 onChange={(value) => setValue('sender_culture', value)}
                 disabled={isLoading}
                 aria-label={senderLabel}
-                placeholder={`Select ${mode === 'inbound' ? "sender's" : 'your'} culture`}
+                placeholder="Country /Culture"
               />
               {errors.sender_culture && (
-                <p className="text-sm text-red-300" role="alert">
+                <p className="text-sm text-red-400" role="alert">
                   {errors.sender_culture.message}
                 </p>
               )}
@@ -578,9 +594,9 @@ export function InterpretationForm(): JSX.Element {
             <div className="flex-1 space-y-2">
               <Label
                 htmlFor="receiver-culture"
-                className="text-base font-medium text-white"
+                className="text-base font-semibold text-white"
               >
-                {receiverLabel}
+                Receiver's Culture
               </Label>
               <CultureSelector
                 id="receiver-culture"
@@ -588,59 +604,60 @@ export function InterpretationForm(): JSX.Element {
                 onChange={(value) => setValue('receiver_culture', value)}
                 disabled={isLoading}
                 aria-label={receiverLabel}
-                placeholder="Select receiver's culture"
+                placeholder="Country /Culture"
               />
               {errors.receiver_culture && (
-                <p className="text-sm text-red-300" role="alert">
+                <p className="text-sm text-red-400" role="alert">
                   {errors.receiver_culture.message}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Submit and Cancel Buttons */}
-          <div className="flex justify-end gap-3">
+          {/* Submit Button - Full width purple gradient */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={!isFormValid || isLoading}
+                    className="w-full min-h-[48px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-live="polite"
+                  >
+                    {isLoading && <Spinner size="sm" className="mr-2" />}
+                    {isLoading ? loadingButtonLabel : submitButtonLabel}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {!isFormValid && !isLoading && (
+                <TooltipContent>
+                  <p>
+                    {isOverLimit
+                      ? 'Message too long. Please shorten to 2,000 characters or less.'
+                      : message.length === 0
+                        ? 'Please enter a message to interpret.'
+                        : !senderCulture || !receiverCulture
+                          ? 'Please select both sender and receiver cultures.'
+                          : 'Please complete all fields.'}
+                  </p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Hidden Cancel Button - only visible during loading */}
+          {isLoading && (
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={!isLoading}
-              className="w-full sm:w-auto min-h-[44px] px-6 border-red-400/50 text-red-300 hover:bg-red-500/20 hover:text-red-200 hover:border-red-400 disabled:opacity-50"
+              className="w-full min-h-[44px] border-white/20 text-white/70 hover:bg-white/5 hover:text-white"
               aria-label="Cancel interpretation"
             >
               Cancel
             </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      type="submit"
-                      disabled={!isFormValid || isLoading}
-                      className="w-full sm:w-auto min-h-[44px] px-6"
-                      aria-live="polite"
-                    >
-                      {isLoading && <Spinner size="sm" className="mr-2" />}
-                      {isLoading ? loadingButtonLabel : submitButtonLabel}
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                {!isFormValid && !isLoading && (
-                  <TooltipContent>
-                    <p>
-                      {isOverLimit
-                        ? 'Message too long. Please shorten to 2,000 characters or less.'
-                        : message.length === 0
-                          ? 'Please enter a message to interpret.'
-                          : !senderCulture || !receiverCulture
-                            ? 'Please select both sender and receiver cultures.'
-                            : 'Please complete all fields.'}
-                    </p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          )}
         </form>
       </div>
 
