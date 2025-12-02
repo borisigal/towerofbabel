@@ -1,0 +1,29 @@
+<svg viewBox="0 0 36 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="27" fill="white"/>
+  <!-- Taeguk (Yin-Yang) -->
+  <circle cx="18" cy="13.5" r="6" fill="#CD2E3A"/>
+  <path d="M18 7.5A6 6 0 0 1 18 19.5A3 3 0 0 1 18 13.5A3 3 0 0 0 18 7.5Z" fill="#0047A0"/>
+  <!-- Trigrams -->
+  <!-- Top left (Geon) -->
+  <rect x="4" y="3" width="7" height="1" fill="black"/>
+  <rect x="4" y="5" width="7" height="1" fill="black"/>
+  <rect x="4" y="7" width="7" height="1" fill="black"/>
+  <!-- Bottom right (Gon) -->
+  <rect x="25" y="19" width="3" height="1" fill="black"/>
+  <rect x="29" y="19" width="3" height="1" fill="black"/>
+  <rect x="25" y="21" width="3" height="1" fill="black"/>
+  <rect x="29" y="21" width="3" height="1" fill="black"/>
+  <rect x="25" y="23" width="3" height="1" fill="black"/>
+  <rect x="29" y="23" width="3" height="1" fill="black"/>
+  <!-- Top right (Gam) -->
+  <rect x="25" y="3" width="3" height="1" fill="black"/>
+  <rect x="29" y="3" width="3" height="1" fill="black"/>
+  <rect x="25" y="5" width="7" height="1" fill="black"/>
+  <rect x="25" y="7" width="3" height="1" fill="black"/>
+  <rect x="29" y="7" width="3" height="1" fill="black"/>
+  <!-- Bottom left (Ri) -->
+  <rect x="4" y="19" width="7" height="1" fill="black"/>
+  <rect x="4" y="21" width="3" height="1" fill="black"/>
+  <rect x="8" y="21" width="3" height="1" fill="black"/>
+  <rect x="4" y="23" width="7" height="1" fill="black"/>
+</svg>
