@@ -596,7 +596,7 @@ export function InterpretationForm(): JSX.Element {
                 htmlFor="receiver-culture"
                 className="text-base font-semibold text-white"
               >
-                Receiver's Culture
+                {receiverLabel}
               </Label>
               <CultureSelector
                 id="receiver-culture"
