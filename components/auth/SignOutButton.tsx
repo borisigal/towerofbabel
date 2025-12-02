@@ -2,6 +2,11 @@
 
 import { useState } from 'react';
 
+interface SignOutButtonProps {
+  /** Optional custom className to override default styling */
+  className?: string;
+}
+
 /**
  * Sign-out button component.
  *
@@ -12,7 +17,7 @@ import { useState } from 'react';
  *
  * Calls /api/auth/sign-out POST endpoint to clear session.
  */
-export function SignOutButton(): JSX.Element {
+export function SignOutButton({ className }: SignOutButtonProps): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSignOut = async (): Promise<void> => {
@@ -38,11 +43,13 @@ export function SignOutButton(): JSX.Element {
     }
   };
 
+  const defaultClassName = "px-4 py-2 text-sm font-medium text-white/70 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+
   return (
     <button
       onClick={handleSignOut}
       disabled={loading}
-      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+      className={className || defaultClassName}
     >
       {loading ? 'Signing out...' : 'Sign Out'}
     </button>

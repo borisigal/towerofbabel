@@ -43,13 +43,13 @@ export function OutboundAnalysis({
   sameCulture,
 }: OutboundAnalysisProps): JSX.Element {
   return (
-    <article className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800 p-4 sm:p-6 space-y-6">
+    <article className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-6 space-y-6">
       {/* How It Will Be Perceived Section */}
       <section>
-        <h2 className="text-xl sm:text-2xl font-bold mb-3 text-foreground flex items-center gap-2">
-          🔍 How It Will Be Perceived
+        <h2 className="text-xl sm:text-2xl font-bold mb-3 text-white flex items-center gap-2">
+          How It Will Be Perceived
         </h2>
-        <p className="text-base sm:text-lg leading-relaxed text-foreground/90">
+        <p className="text-base sm:text-lg leading-relaxed text-white/90">
           {originalAnalysis}
         </p>
       </section>
@@ -57,10 +57,10 @@ export function OutboundAnalysis({
       {/* Suggestions Section */}
       {suggestions && suggestions.length > 0 && (
         <section>
-          <h3 className="text-lg sm:text-xl font-semibold mb-3 text-foreground flex items-center gap-2">
-            💡 Suggestion
+          <h3 className="text-lg sm:text-xl font-semibold mb-3 text-white flex items-center gap-2">
+            Suggestion
           </h3>
-          <ul className="space-y-2 text-foreground/80 list-disc list-inside">
+          <ul className="space-y-2 text-white/80 list-disc list-inside">
             {suggestions.map((suggestion, index) => (
               <li key={index} className="text-base leading-relaxed">
                 {suggestion}
@@ -72,8 +72,8 @@ export function OutboundAnalysis({
 
       {/* Top 3 Emotions Section */}
       <section>
-        <h3 className="text-lg sm:text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-          😊 Top 3 Emotions Detected
+        <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white flex items-center gap-2">
+          Top 3 Emotions Detected
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {emotions.slice(0, 3).map((emotion, index) => (

@@ -74,14 +74,14 @@ export function UsageDisplay({
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div className="bg-card shadow rounded-lg p-6 border border-border">
-        <h2 className="text-lg font-semibold mb-4 text-foreground">
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/10">
+        <h2 className="text-lg font-semibold mb-4 text-white">
           {getUsageLabel()}
         </h2>
 
       {/* Progress bar (only for tiers with limits) */}
       {messagesLimit && (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+        <div className="w-full bg-white/20 rounded-full h-4">
           <div
             className={`${getProgressBarColor()} h-4 rounded-full transition-all duration-300`}
             style={{
@@ -98,13 +98,13 @@ export function UsageDisplay({
 
       {/* Upgrade CTA for trial users near limit */}
       {showUpgradeCTA && (
-        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+        <div className="mt-4 p-4 bg-purple-500/20 border border-purple-500/30 rounded">
+          <p className="text-sm text-purple-200">
             You&apos;re almost out of trial messages. Upgrade to Pro for 100
             messages/month!
           </p>
           <button
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200"
+            className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors duration-200"
             onClick={() => {
               // TODO: Epic 3 - Open upgrade modal
             }}

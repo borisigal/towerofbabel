@@ -45,7 +45,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-[hsl(262,70%,20%)] via-[hsl(220,60%,30%)] to-[hsl(200,50%,35%)] text-white">
       {/* Dashboard Navigation with Usage Indicator (Story 3.2) */}
       <DashboardNav
         userName={user.user_metadata?.name}

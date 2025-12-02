@@ -105,12 +105,12 @@ export function OutboundResult({
       <div className="space-y-6">
         {/* Optimized Message Section */}
         <div
-          className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg p-4"
+          className="bg-green-500/20 border border-green-500/30 rounded-lg p-4"
           role="region"
           aria-label="Optimized message"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-foreground">
+            <h3 className="text-lg font-semibold text-white">
               Culturally Optimized Version
             </h3>
             <Button
@@ -118,7 +118,7 @@ export function OutboundResult({
               disabled={copied}
               variant="outline"
               size="sm"
-              className="min-h-[36px]"
+              className="min-h-[36px] border-white/30 text-white hover:bg-white/10"
               aria-label="Copy optimized message to clipboard"
             >
               {copied ? (
@@ -135,7 +135,7 @@ export function OutboundResult({
             </Button>
           </div>
           <div className="max-h-[300px] overflow-y-auto">
-            <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
+            <p className="text-base leading-relaxed text-white/90 whitespace-pre-wrap">
               {optimizedMessage}
             </p>
           </div>
@@ -151,16 +151,16 @@ export function OutboundResult({
 
         {/* Feedback Buttons Section */}
         {interpretationId && (
-          <div className="border-t border-blue-200 dark:border-blue-800 pt-4">
+          <div className="border-t border-white/10 pt-4">
             <FeedbackButtons interpretationId={interpretationId} />
           </div>
         )}
 
         {/* Messages Remaining Display */}
         {messagesRemaining !== undefined && (
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground text-center">
-              💬 {messagesRemaining} messages remaining
+          <div className="border-t border-white/10 pt-4">
+            <p className="text-sm text-white/60 text-center">
+              {messagesRemaining} messages remaining
             </p>
           </div>
         )}
