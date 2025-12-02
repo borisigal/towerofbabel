@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 36 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="UK United Kingdom">
+<path id="Rectangle" d="M0 0H36V27H0V0Z" fill="#2E4E9D"/>
+<path id="Intersect" d="M36 23.4844L22.6875 13.5L36 3.51563V6.55651e-07H31.3125L18 9.9844L4.6875 6.55651e-07H0V3.51563L13.3125 13.5L0 23.4844V27H4.68756L18 17.0157L31.3124 27H36V23.4844Z" fill="white"/>
+<path id="Subtract" d="M1.875 0L18 12.0938L34.125 0H36V1.40625L19.875 13.5L36 25.5928V27H34.125L18 14.9062L1.875 27H0V25.5928L16.125 13.5L0 1.40625V0H1.875Z" fill="#DC251C"/>
+<path id="Vector (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M13.5 9V0H22.5V9H36V18H22.5V27H13.5V18H0V9H13.5Z" fill="white"/>
+<path id="Vector (Stroke)_2" fill-rule="evenodd" clip-rule="evenodd" d="M15.75 11.25V0H20.25V11.25H36V15.75H20.25V27H15.75V15.75H0V11.25H15.75Z" fill="#DC251C"/>
+</g>
+</svg>

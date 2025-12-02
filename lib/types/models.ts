@@ -27,27 +27,27 @@ export type CultureCode =
   | 'ukrainian';
 
 /**
- * Human-readable culture names with flag emojis mapped to culture codes.
+ * Human-readable culture names mapped to culture codes.
  * Used for dropdown display in culture selectors.
  */
 export const CULTURE_NAMES: Record<CultureCode, string> = {
-  american: '🇺🇸 American',
-  british: '🇬🇧 British',
-  german: '🇩🇪 German',
-  french: '🇫🇷 French',
-  japanese: '🇯🇵 Japanese',
-  chinese: '🇨🇳 Chinese (Mandarin)',
-  indian: '🇮🇳 Indian',
-  spanish: '🇪🇸 Spanish',
-  italian: '🇮🇹 Italian',
-  dutch: '🇳🇱 Dutch',
-  korean: '🇰🇷 Korean',
-  brazilian: '🇧🇷 Brazilian Portuguese',
-  mexican: '🇲🇽 Mexican',
-  australian: '🇦🇺 Australian',
-  canadian: '🇨🇦 Canadian',
-  russian: '🇷🇺 Russian',
-  ukrainian: '🇺🇦 Ukrainian',
+  american: 'American',
+  british: 'British',
+  german: 'German',
+  french: 'French',
+  japanese: 'Japanese',
+  chinese: 'Chinese (Mandarin)',
+  indian: 'Indian',
+  spanish: 'Spanish',
+  italian: 'Italian',
+  dutch: 'Dutch',
+  korean: 'Korean',
+  brazilian: 'Brazilian Portuguese',
+  mexican: 'Mexican',
+  australian: 'Australian',
+  canadian: 'Canadian',
+  russian: 'Russian',
+  ukrainian: 'Ukrainian',
 };
 
 /**

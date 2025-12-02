@@ -1,0 +1,68 @@
+<svg viewBox="0 0 36 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="27" fill="#B22234"/>
+  <rect y="2.077" width="36" height="2.077" fill="white"/>
+  <rect y="6.231" width="36" height="2.077" fill="white"/>
+  <rect y="10.385" width="36" height="2.077" fill="white"/>
+  <rect y="14.538" width="36" height="2.077" fill="white"/>
+  <rect y="18.692" width="36" height="2.077" fill="white"/>
+  <rect y="22.846" width="36" height="2.077" fill="white"/>
+  <rect width="14.4" height="14.538" fill="#3C3B6E"/>
+  <defs>
+    <polygon id="star" points="0,-0.5 0.118,-0.154 0.476,-0.154 0.19,0.059 0.294,0.405 0,0.166 -0.294,0.405 -0.19,0.059 -0.476,-0.154 -0.118,-0.154" fill="white"/>
+    <clipPath id="cantonClip">
+      <rect width="14.4" height="14.538"/>
+    </clipPath>
+  </defs>
+  <g fill="white" clip-path="url(#cantonClip)">
+    <use href="#star" transform="translate(1.2, 1.2)"/>
+    <use href="#star" transform="translate(3.6, 1.2)"/>
+    <use href="#star" transform="translate(6.0, 1.2)"/>
+    <use href="#star" transform="translate(8.4, 1.2)"/>
+    <use href="#star" transform="translate(10.8, 1.2)"/>
+    <use href="#star" transform="translate(13.2, 1.2)"/>
+    <use href="#star" transform="translate(2.4, 2.7)"/>
+    <use href="#star" transform="translate(4.8, 2.7)"/>
+    <use href="#star" transform="translate(7.2, 2.7)"/>
+    <use href="#star" transform="translate(9.6, 2.7)"/>
+    <use href="#star" transform="translate(12.0, 2.7)"/>
+    <use href="#star" transform="translate(1.2, 4.2)"/>
+    <use href="#star" transform="translate(3.6, 4.2)"/>
+    <use href="#star" transform="translate(6.0, 4.2)"/>
+    <use href="#star" transform="translate(8.4, 4.2)"/>
+    <use href="#star" transform="translate(10.8, 4.2)"/>
+    <use href="#star" transform="translate(13.2, 4.2)"/>
+    <use href="#star" transform="translate(2.4, 5.7)"/>
+    <use href="#star" transform="translate(4.8, 5.7)"/>
+    <use href="#star" transform="translate(7.2, 5.7)"/>
+    <use href="#star" transform="translate(9.6, 5.7)"/>
+    <use href="#star" transform="translate(12.0, 5.7)"/>
+    <use href="#star" transform="translate(1.2, 7.2)"/>
+    <use href="#star" transform="translate(3.6, 7.2)"/>
+    <use href="#star" transform="translate(6.0, 7.2)"/>
+    <use href="#star" transform="translate(8.4, 7.2)"/>
+    <use href="#star" transform="translate(10.8, 7.2)"/>
+    <use href="#star" transform="translate(13.2, 7.2)"/>
+    <use href="#star" transform="translate(2.4, 8.7)"/>
+    <use href="#star" transform="translate(4.8, 8.7)"/>
+    <use href="#star" transform="translate(7.2, 8.7)"/>
+    <use href="#star" transform="translate(9.6, 8.7)"/>
+    <use href="#star" transform="translate(12.0, 8.7)"/>
+    <use href="#star" transform="translate(1.2, 10.2)"/>
+    <use href="#star" transform="translate(3.6, 10.2)"/>
+    <use href="#star" transform="translate(6.0, 10.2)"/>
+    <use href="#star" transform="translate(8.4, 10.2)"/>
+    <use href="#star" transform="translate(10.8, 10.2)"/>
+    <use href="#star" transform="translate(13.2, 10.2)"/>
+    <use href="#star" transform="translate(2.4, 11.7)"/>
+    <use href="#star" transform="translate(4.8, 11.7)"/>
+    <use href="#star" transform="translate(7.2, 11.7)"/>
+    <use href="#star" transform="translate(9.6, 11.7)"/>
+    <use href="#star" transform="translate(12.0, 11.7)"/>
+    <use href="#star" transform="translate(1.2, 13.2)"/>
+    <use href="#star" transform="translate(3.6, 13.2)"/>
+    <use href="#star" transform="translate(6.0, 13.2)"/>
+    <use href="#star" transform="translate(8.4, 13.2)"/>
+    <use href="#star" transform="translate(10.8, 13.2)"/>
+    <use href="#star" transform="translate(13.2, 13.2)"/>
+  </g>
+</svg>
