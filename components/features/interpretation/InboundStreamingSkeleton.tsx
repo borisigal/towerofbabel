@@ -130,7 +130,7 @@ export function InboundStreamingSkeleton({
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <article
-        className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800 p-4 sm:p-6 space-y-6"
+        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-6 space-y-6"
         aria-busy={isStreaming}
         aria-live="polite"
       >
@@ -234,7 +234,7 @@ export function InboundStreamingSkeleton({
 
         {/* Streaming Status Footer */}
         {isStreaming && (
-          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm pt-4 border-t border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm pt-4 border-t border-white/10">
             <Spinner size="sm" />
             <span>Generating interpretation...</span>
           </div>

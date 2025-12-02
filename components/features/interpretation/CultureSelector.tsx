@@ -70,7 +70,7 @@ interface CultureSelectorProps {
 function FlagIcon({ cultureCode }: { cultureCode: CultureCode }): JSX.Element {
   const FlagComponent = CULTURE_FLAGS[cultureCode];
   return (
-    <span className="inline-flex items-center justify-center w-6 h-4 mr-2 overflow-hidden border border-gray-200">
+    <span className="inline-flex items-center justify-center w-6 h-4 mr-2 overflow-hidden rounded-sm">
       <FlagComponent className="w-full h-full" aria-hidden="true" />
     </span>
   );
@@ -109,7 +109,7 @@ export function CultureSelector({
     >
       <SelectTrigger
         id={id}
-        className="w-full min-h-[44px]"
+        className="w-full min-h-[48px] bg-slate-900/80 border border-white/20 rounded-full px-4 text-white hover:border-white/30 focus:border-white/40 focus:ring-0"
         aria-label={ariaLabel}
       >
         <SelectValue placeholder={placeholder}>
@@ -121,9 +121,13 @@ export function CultureSelector({
           )}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-slate-900 border border-white/20">
         {CULTURES.map((cultureCode) => (
-          <SelectItem key={cultureCode} value={cultureCode}>
+          <SelectItem
+            key={cultureCode}
+            value={cultureCode}
+            className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white"
+          >
             <span className="flex items-center">
               <FlagIcon cultureCode={cultureCode} />
               {CULTURE_NAMES[cultureCode]}

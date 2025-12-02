@@ -155,7 +155,7 @@ export function OutboundStreamingSkeleton({
       <div className="space-y-6" aria-busy={isStreaming} aria-live="polite">
         {/* Optimized Message Section */}
         <div
-          className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg p-4"
+          className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4"
           role="region"
           aria-label="Optimized message"
         >
@@ -187,7 +187,7 @@ export function OutboundStreamingSkeleton({
         </div>
 
         {/* Analysis Section */}
-        <article className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800 p-4 sm:p-6 space-y-6">
+        <article className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-6 space-y-6">
           {/* How It Will Be Perceived Section */}
           <section>
             <h2 className="text-xl sm:text-2xl font-bold mb-3 text-foreground flex items-center gap-2">

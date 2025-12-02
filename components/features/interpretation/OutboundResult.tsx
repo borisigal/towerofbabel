@@ -105,7 +105,7 @@ export function OutboundResult({
       <div className="space-y-6">
         {/* Optimized Message Section */}
         <div
-          className="bg-green-500/20 border border-green-500/30 rounded-lg p-4"
+          className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4"
           role="region"
           aria-label="Optimized message"
         >
