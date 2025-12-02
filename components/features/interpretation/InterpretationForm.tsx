@@ -487,7 +487,7 @@ export function InterpretationForm(): JSX.Element {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
         {/* Mode Toggle - Story 4.1 */}
         <Tabs
           value={mode}
@@ -507,14 +507,14 @@ export function InterpretationForm(): JSX.Element {
           </TabsList>
         </Tabs>
 
-        <h2 className="text-2xl font-semibold mb-6 text-foreground">
+        <h2 className="text-2xl font-semibold mb-6 text-white">
           {mode === 'inbound' ? 'Interpret Message' : 'Optimize Message'}
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Message Textarea with Character Counter */}
           <div className="space-y-2">
-            <Label htmlFor="message" className="text-base font-medium">
+            <Label htmlFor="message" className="text-base font-medium text-white">
               Message to {mode === 'inbound' ? 'Interpret' : 'Optimize'}
             </Label>
             <Textarea
@@ -539,8 +539,8 @@ export function InterpretationForm(): JSX.Element {
               aria-live="polite"
               className={`text-sm ${
                 isOverLimit
-                  ? 'text-destructive font-semibold'
-                  : 'text-muted-foreground'
+                  ? 'text-red-300 font-semibold'
+                  : 'text-white/60'
               }`}
             >
               {characterCount} / 2,000 characters
@@ -548,7 +548,7 @@ export function InterpretationForm(): JSX.Element {
             </div>
 
             {errors.message && (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="text-sm text-red-300" role="alert">
                 {errors.message.message}
               </p>
             )}
@@ -557,7 +557,7 @@ export function InterpretationForm(): JSX.Element {
           {/* Culture Selectors - Stack on mobile, side-by-side on desktop */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 space-y-2">
-              <Label htmlFor="sender-culture" className="text-base font-medium">
+              <Label htmlFor="sender-culture" className="text-base font-medium text-white">
                 {senderLabel}
               </Label>
               <CultureSelector
@@ -569,7 +569,7 @@ export function InterpretationForm(): JSX.Element {
                 placeholder={`Select ${mode === 'inbound' ? "sender's" : 'your'} culture`}
               />
               {errors.sender_culture && (
-                <p className="text-sm text-destructive" role="alert">
+                <p className="text-sm text-red-300" role="alert">
                   {errors.sender_culture.message}
                 </p>
               )}
@@ -578,7 +578,7 @@ export function InterpretationForm(): JSX.Element {
             <div className="flex-1 space-y-2">
               <Label
                 htmlFor="receiver-culture"
-                className="text-base font-medium"
+                className="text-base font-medium text-white"
               >
                 {receiverLabel}
               </Label>
@@ -591,7 +591,7 @@ export function InterpretationForm(): JSX.Element {
                 placeholder="Select receiver's culture"
               />
               {errors.receiver_culture && (
-                <p className="text-sm text-destructive" role="alert">
+                <p className="text-sm text-red-300" role="alert">
                   {errors.receiver_culture.message}
                 </p>
               )}
@@ -605,7 +605,7 @@ export function InterpretationForm(): JSX.Element {
               variant="outline"
               onClick={handleCancel}
               disabled={!isLoading}
-              className="w-full sm:w-auto min-h-[44px] px-6 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 disabled:opacity-50 disabled:border-red-300 disabled:text-red-600 dark:disabled:border-red-700 dark:disabled:text-red-400"
+              className="w-full sm:w-auto min-h-[44px] px-6 border-red-400/50 text-red-300 hover:bg-red-500/20 hover:text-red-200 hover:border-red-400 disabled:opacity-50"
               aria-label="Cancel interpretation"
             >
               Cancel

@@ -2,11 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { PrivacyBadge } from '@/components/features/privacy/PrivacyBadge';
 
 /**
- * Footer component displayed on all pages.
- * Client Component (uses Link for navigation).
+ * Footer component displayed on all pages except landing page.
+ * Client Component (uses Link for navigation and usePathname for route detection).
  *
  * Includes:
  * - Footer navigation links (About, Privacy, Terms, Contact)
@@ -14,12 +15,19 @@ import { PrivacyBadge } from '@/components/features/privacy/PrivacyBadge';
  * - Copyright text
  *
  * Responsive layout: horizontal on desktop, vertical stack on mobile.
+ * Hidden on landing page (/) which has its own integrated footer.
  *
  * @see components/features/privacy/PrivacyBadge.tsx
  * @see docs/stories/5.1.story.md#task-6
  */
-export function Footer(): React.JSX.Element {
+export function Footer(): React.JSX.Element | null {
+  const pathname = usePathname();
   const providerName = process.env.NEXT_PUBLIC_LLM_PROVIDER_NAME || 'OpenAI';
+
+  // Don't render on pages with custom styling (landing page, sign-in)
+  if (pathname === '/' || pathname === '/sign-in') {
+    return null;
+  }
 
   return (
     <footer className="border-t mt-auto">

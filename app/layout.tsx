@@ -21,6 +21,7 @@ export const metadata = {
  *
  * Provides basic HTML structure and global components.
  * Navigation is handled by route-specific layouts (dashboard, auth, etc.).
+ * Footer is global for all pages except landing page (which has its own).
  *
  * @param children - Child components to render in the main content area
  */

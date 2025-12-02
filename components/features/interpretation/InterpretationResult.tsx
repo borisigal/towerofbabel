@@ -40,24 +40,24 @@ export function InterpretationResult({
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <article className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800 p-4 sm:p-6 space-y-6">
+      <article className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-6 space-y-6">
         {/* The Bottom Line Section */}
         <section>
-          <h2 className="text-xl sm:text-2xl font-bold mb-3 text-foreground flex items-center gap-2">
-            🎯 The Bottom Line
+          <h2 className="text-xl sm:text-2xl font-bold mb-3 text-white flex items-center gap-2">
+            The Bottom Line
           </h2>
-          <p className="text-base sm:text-lg leading-relaxed text-foreground/90">
+          <p className="text-base sm:text-lg leading-relaxed text-white/90">
             {bottomLine}
           </p>
         </section>
 
         {/* Cultural Context Section */}
         <section>
-          <h3 className="text-lg sm:text-xl font-semibold mb-3 text-foreground flex items-center gap-2">
-            🔍 Cultural Context
+          <h3 className="text-lg sm:text-xl font-semibold mb-3 text-white flex items-center gap-2">
+            Cultural Context
           </h3>
-          <div className="prose prose-sm sm:prose max-w-none dark:prose-invert">
-            <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
+          <div className="prose prose-sm sm:prose max-w-none prose-invert">
+            <p className="text-white/80 leading-relaxed whitespace-pre-line">
               {culturalContext}
             </p>
           </div>
@@ -65,8 +65,8 @@ export function InterpretationResult({
 
         {/* Top 3 Emotions Section */}
         <section>
-          <h3 className="text-lg sm:text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-            😊 Top 3 Emotions Detected
+          <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white flex items-center gap-2">
+            Top 3 Emotions Detected
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {emotions.slice(0, 3).map((emotion, index) => (
@@ -82,16 +82,16 @@ export function InterpretationResult({
 
         {/* Feedback Buttons Section */}
         {interpretationId && (
-          <section className="border-t border-blue-200 dark:border-blue-800 pt-4">
+          <section className="border-t border-white/10 pt-4">
             <FeedbackButtons interpretationId={interpretationId} />
           </section>
         )}
 
         {/* Messages Remaining Display */}
         {messagesRemaining !== undefined && (
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground text-center">
-              💬 {messagesRemaining} messages remaining
+          <div className="border-t border-white/10 pt-4">
+            <p className="text-sm text-white/60 text-center">
+              {messagesRemaining} messages remaining
             </p>
           </div>
         )}

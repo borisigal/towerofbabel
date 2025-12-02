@@ -55,21 +55,21 @@ export function UsageNotificationBanner(): JSX.Element | null {
 
   return (
     <div
-      className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 mb-6"
+      className="bg-yellow-500/20 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg"
       role="alert"
       aria-live="polite"
     >
       <div className="flex items-start justify-between gap-4">
         {/* Message content */}
         <div className="flex-1">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          <p className="text-sm text-yellow-200">
             {message}
             {upgradeUrl && (
               <>
                 {' '}
                 <button
                   onClick={() => setOpen(true, 'notification_banner')}
-                  className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100 transition-colors"
+                  className="underline font-medium hover:text-yellow-100 transition-colors"
                   type="button"
                 >
                   Upgrade Now
@@ -82,7 +82,7 @@ export function UsageNotificationBanner(): JSX.Element | null {
         {/* Dismiss button */}
         <button
           onClick={onDismiss}
-          className="flex-shrink-0 text-yellow-800 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-yellow-100 transition-colors"
+          className="flex-shrink-0 text-yellow-200 hover:text-yellow-100 transition-colors"
           aria-label="Dismiss notification"
           type="button"
         >
