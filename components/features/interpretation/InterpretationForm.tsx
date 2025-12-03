@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -175,10 +174,6 @@ export function InterpretationForm(): JSX.Element {
   const submitButtonLabel = mode === 'inbound'
     ? 'Interpret Message'
     : 'Optimize Message';
-
-  const loadingButtonLabel = mode === 'inbound'
-    ? 'Interpreting...'
-    : 'Optimizing...';
 
   /**
    * Fallback to buffered /api/interpret endpoint.
@@ -614,49 +609,46 @@ export function InterpretationForm(): JSX.Element {
             </div>
           </div>
 
-          {/* Submit Button - Full width purple gradient */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full">
-                  <Button
-                    type="submit"
-                    disabled={!isFormValid || isLoading}
-                    className="w-full min-h-[48px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-live="polite"
-                  >
-                    {isLoading && <Spinner size="sm" className="mr-2" />}
-                    {isLoading ? loadingButtonLabel : submitButtonLabel}
-                  </Button>
-                </div>
-              </TooltipTrigger>
-              {!isFormValid && !isLoading && (
-                <TooltipContent>
-                  <p>
-                    {isOverLimit
-                      ? 'Message too long. Please shorten to 2,000 characters or less.'
-                      : message.length === 0
-                        ? 'Please enter a message to interpret.'
-                        : !senderCulture || !receiverCulture
-                          ? 'Please select both sender and receiver cultures.'
-                          : 'Please complete all fields.'}
-                  </p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Hidden Cancel Button - only visible during loading */}
-          {isLoading && (
+          {/* Submit/Cancel Button - Full width, changes to cancel when loading */}
+          {isLoading ? (
             <Button
               type="button"
-              variant="outline"
               onClick={handleCancel}
-              className="w-full min-h-[44px] border-white/20 text-white/70 hover:bg-white/5 hover:text-white"
+              className="w-full min-h-[48px] bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-medium rounded-lg"
               aria-label="Cancel interpretation"
             >
               Cancel
             </Button>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-full">
+                    <Button
+                      type="submit"
+                      disabled={!isFormValid}
+                      className="w-full min-h-[48px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-live="polite"
+                    >
+                      {submitButtonLabel}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!isFormValid && (
+                  <TooltipContent>
+                    <p>
+                      {isOverLimit
+                        ? 'Message too long. Please shorten to 2,000 characters or less.'
+                        : message.length === 0
+                          ? 'Please enter a message to interpret.'
+                          : !senderCulture || !receiverCulture
+                            ? 'Please select both sender and receiver cultures.'
+                            : 'Please complete all fields.'}
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
         </form>
       </div>
