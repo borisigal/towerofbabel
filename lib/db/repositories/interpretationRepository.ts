@@ -199,3 +199,86 @@ export async function getUserTotalCost(userId: string): Promise<number> {
 
   return Number(result._sum.cost_usd) || 0;
 }
+
+/**
+ * Culture pair statistics for user analytics.
+ */
+export interface CulturePairStat {
+  cultureSender: string;
+  cultureReceiver: string;
+  count: number;
+}
+
+/**
+ * User statistics for the pricing page.
+ */
+export interface UserStats {
+  totalUsage: number;
+  interpretationsCount: number;
+  optimizationsCount: number;
+  uniqueCulturePairsCount: number;
+  topCulturePairs: CulturePairStat[];
+}
+
+/**
+ * Gets comprehensive usage statistics for a user.
+ *
+ * Returns:
+ * - Total usage (all interpretations)
+ * - Interpretations count (inbound type)
+ * - Optimizations count (outbound type)
+ * - Unique culture pairs count (insights gained)
+ *
+ * Used on the pricing page to show user engagement stats.
+ *
+ * @param userId - User UUID
+ * @returns Promise resolving to user statistics
+ */
+export async function getUserStats(userId: string): Promise<UserStats> {
+  // Run queries in parallel for performance
+  const [totalUsage, interpretationsCount, optimizationsCount, culturePairResults] =
+    await Promise.all([
+      // Total usage count
+      executeWithCircuitBreaker(() =>
+        prisma.interpretation.count({
+          where: { user_id: userId },
+        })
+      ),
+
+      // Interpretations count (inbound)
+      executeWithCircuitBreaker(() =>
+        prisma.interpretation.count({
+          where: {
+            user_id: userId,
+            interpretation_type: 'inbound',
+          },
+        })
+      ),
+
+      // Optimizations count (outbound)
+      executeWithCircuitBreaker(() =>
+        prisma.interpretation.count({
+          where: {
+            user_id: userId,
+            interpretation_type: 'outbound',
+          },
+        })
+      ),
+
+      // Unique culture pairs - using groupBy to get distinct pairs
+      executeWithCircuitBreaker(() =>
+        prisma.interpretation.groupBy({
+          by: ['culture_sender', 'culture_receiver'],
+          where: { user_id: userId },
+        })
+      ),
+    ]);
+
+  return {
+    totalUsage,
+    interpretationsCount,
+    optimizationsCount,
+    uniqueCulturePairsCount: culturePairResults.length,
+    topCulturePairs: [],
+  };
+}

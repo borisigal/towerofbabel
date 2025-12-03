@@ -54,8 +54,9 @@ export function DashboardFooter(): React.JSX.Element {
 export function Footer(): React.JSX.Element | null {
   const pathname = usePathname();
 
-  // Don't render on pages with custom styling
-  if (pathname === '/' || pathname === '/sign-in' || pathname?.startsWith('/dashboard') || pathname?.startsWith('/settings')) {
+  // Don't render on pages with custom styling or dashboard pages
+  // Note: /pricing is in (dashboard) route group so it gets DashboardFooter
+  if (pathname === '/' || pathname === '/sign-in' || pathname === '/pricing' || pathname?.startsWith('/dashboard') || pathname?.startsWith('/settings')) {
     return null;
   }
 
