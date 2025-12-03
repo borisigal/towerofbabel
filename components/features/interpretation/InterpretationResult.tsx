@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { type InterpretationResult as InterpretationResultType } from '@/lib/types/models';
+import { type InterpretationResult as InterpretationResultType, type CultureCode } from '@/lib/types/models';
 import { EmotionGauge } from './EmotionGauge';
 import { FeedbackButtons } from './FeedbackButtons';
 
@@ -9,6 +9,8 @@ interface InterpretationResultProps {
   result: InterpretationResultType;
   messagesRemaining?: number;
   interpretationId?: string;
+  senderCulture?: CultureCode;
+  receiverCulture?: CultureCode;
 }
 
 /**
@@ -31,6 +33,8 @@ export function InterpretationResult({
   result,
   messagesRemaining,
   interpretationId,
+  senderCulture,
+  receiverCulture,
 }: InterpretationResultProps): JSX.Element {
   const { bottomLine, culturalContext, emotions } = result;
 
@@ -39,7 +43,7 @@ export function InterpretationResult({
   const sameCulture = emotions.length > 0 && emotions[0]?.receiverScore === undefined;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="w-full mx-auto py-4">
       <article className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-6 space-y-6">
         {/* The Bottom Line Section */}
         <section>
@@ -63,18 +67,20 @@ export function InterpretationResult({
           </div>
         </section>
 
-        {/* Top 3 Emotions Section */}
+        {/* Emotion Gauge Section */}
         <section>
           <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white flex items-center gap-2">
-            Top 3 Emotions Detected
+            Emotion Gauge
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {emotions.slice(0, 3).map((emotion, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {emotions.slice(0, 4).map((emotion, index) => (
               <EmotionGauge
                 key={index}
                 emotion={emotion}
                 sameCulture={sameCulture}
                 index={index}
+                senderCulture={senderCulture}
+                receiverCulture={receiverCulture}
               />
             ))}
           </div>

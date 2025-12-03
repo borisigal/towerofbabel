@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/auth/supabaseServer';
 import { checkCancelledStatus } from '@/lib/middleware/checkCancelledStatus';
 import { DashboardNav } from '@/components/layout/DashboardNav';
+import { DashboardFooter } from '@/components/layout/Footer';
 import { redirect } from 'next/navigation';
 
 /**
@@ -45,7 +46,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(262,70%,20%)] via-[hsl(220,60%,30%)] to-[hsl(200,50%,35%)] text-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[hsl(262,70%,20%)] via-[hsl(220,60%,30%)] to-[hsl(200,50%,35%)] text-white">
       {/* Dashboard Navigation with Usage Indicator (Story 3.2) */}
       <DashboardNav
         userName={user.user_metadata?.name}
@@ -53,9 +54,12 @@ export default async function DashboardLayout({
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {children}
       </main>
+
+      {/* Footer - inside gradient container */}
+      <DashboardFooter />
     </div>
   );
 }

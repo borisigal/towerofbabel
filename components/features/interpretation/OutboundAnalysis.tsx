@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { EmotionGauge } from './EmotionGauge';
-import { type Emotion } from '@/lib/types/models';
+import { type Emotion, type CultureCode } from '@/lib/types/models';
 
 interface OutboundAnalysisProps {
   originalAnalysis: string;
   suggestions: string[];
   emotions: Emotion[];
   sameCulture: boolean;
+  senderCulture?: CultureCode;
+  receiverCulture?: CultureCode;
 }
 
 /**
@@ -41,6 +43,8 @@ export function OutboundAnalysis({
   suggestions,
   emotions,
   sameCulture,
+  senderCulture,
+  receiverCulture,
 }: OutboundAnalysisProps): JSX.Element {
   return (
     <article className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-6 space-y-6">
@@ -70,18 +74,20 @@ export function OutboundAnalysis({
         </section>
       )}
 
-      {/* Top 3 Emotions Section */}
+      {/* Emotion Gauge Section */}
       <section>
         <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white flex items-center gap-2">
-          Top 3 Emotions Detected
+          Emotion Gauge
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {emotions.slice(0, 3).map((emotion, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {emotions.slice(0, 4).map((emotion, index) => (
             <EmotionGauge
               key={index}
               emotion={emotion}
               sameCulture={sameCulture}
               index={index}
+              senderCulture={senderCulture}
+              receiverCulture={receiverCulture}
             />
           ))}
         </div>

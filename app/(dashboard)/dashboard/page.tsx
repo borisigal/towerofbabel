@@ -3,7 +3,6 @@ import { findUserById } from '@/lib/db/repositories/userRepository';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { DashboardHeader } from '@/components/features/dashboard/DashboardHeader';
-import { UsageDisplay } from '@/components/features/dashboard/UsageDisplay';
 import { UsageNotificationBanner } from '@/components/features/dashboard/UsageNotificationBanner';
 import { UsageSyncProvider } from '@/components/features/dashboard/UsageSyncProvider';
 import { BillingReturnHandler } from '@/components/features/dashboard/BillingReturnHandler';
@@ -79,11 +78,7 @@ async function DashboardContent(): Promise<JSX.Element> {
     );
   }
 
-  // 3. CALCULATE tier-specific message limits
-  const messagesLimit =
-    userRecord.tier === 'trial' ? 10 : userRecord.tier === 'pro' ? 100 : undefined;
-
-  // 4. RENDER dashboard with user data from database
+  // 3. RENDER dashboard with user data from database
   return (
     <UsageSyncProvider>
       {/* Billing Portal Return Handler - Story 3.5 */}
@@ -98,13 +93,6 @@ async function DashboardContent(): Promise<JSX.Element> {
 
         {/* Interpretation Form - Story 2.1 */}
         <InterpretationForm />
-
-        {/* Usage Display */}
-        <UsageDisplay
-          tier={userRecord.tier as 'trial' | 'payg' | 'pro'}
-          messagesUsedCount={userRecord.messages_used_count}
-          messagesLimit={messagesLimit}
-        />
       </div>
 
       {/* Upgrade Modal - Story 3.3 */}

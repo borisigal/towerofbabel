@@ -14,6 +14,7 @@ import {
   type PartialInboundResult,
   type PartialOutboundResult,
 } from '@/lib/hooks/useProgressiveJsonParser';
+import { type CultureCode } from '@/lib/types/models';
 
 /**
  * Props for StreamingResult component.
@@ -35,6 +36,10 @@ interface StreamingResultProps {
   messagesRemaining?: number;
   /** Database ID of saved interpretation */
   interpretationId?: string;
+  /** Sender culture code for emotion gauge flags */
+  senderCulture?: CultureCode;
+  /** Receiver culture code for emotion gauge flags */
+  receiverCulture?: CultureCode;
 }
 
 /**
@@ -63,6 +68,8 @@ export function StreamingResult({
   originalMessage,
   messagesRemaining,
   interpretationId,
+  senderCulture,
+  receiverCulture,
 }: StreamingResultProps): JSX.Element | null {
   // Parse streaming JSON progressively to extract completed fields
   const partialResult = useProgressiveJsonParser(streamingText, mode);
@@ -75,6 +82,8 @@ export function StreamingResult({
           <InboundStreamingSkeleton
             partialResult={partialResult as PartialInboundResult}
             isStreaming={isStreaming}
+            senderCulture={senderCulture}
+            receiverCulture={receiverCulture}
           />
         </div>
       );
@@ -84,6 +93,8 @@ export function StreamingResult({
           <OutboundStreamingSkeleton
             partialResult={partialResult as PartialOutboundResult}
             isStreaming={isStreaming}
+            senderCulture={senderCulture}
+            receiverCulture={receiverCulture}
           />
         </div>
       );
@@ -99,6 +110,8 @@ export function StreamingResult({
             result={result as InboundInterpretationResponse}
             messagesRemaining={messagesRemaining}
             interpretationId={interpretationId}
+            senderCulture={senderCulture}
+            receiverCulture={receiverCulture}
           />
         ) : (
           <OutboundResult
@@ -106,6 +119,8 @@ export function StreamingResult({
             originalMessage={originalMessage || ''}
             messagesRemaining={messagesRemaining}
             interpretationId={interpretationId}
+            senderCulture={senderCulture}
+            receiverCulture={receiverCulture}
           />
         )}
       </div>
