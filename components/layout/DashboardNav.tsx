@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { useUpgradeModalStore } from '@/lib/stores/upgradeModalStore';
-import { useUsageStore } from '@/lib/stores/usageStore';
 import { ChevronRight, ChevronDown, Clock, Menu, X } from 'lucide-react';
 
 /**
@@ -62,16 +62,18 @@ export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.El
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { setOpen } = useUpgradeModalStore();
-  const { tier } = useUsageStore();
 
   const displayName = userName || userEmail;
   const initials = getInitials(userName, userEmail);
   const trialDaysRemaining = getTrialDaysRemaining();
 
+  // Trial banner temporarily disabled
+  const showTrialBanner = false;
+
   return (
     <>
-      {/* Trial Banner - Only shown for trial users */}
-      {tier === 'trial' && (
+      {/* Trial Banner - Only shown for trial users, hidden on pricing page */}
+      {showTrialBanner && (
         <div className="bg-[hsl(210,60%,25%)] text-white py-2 px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm">
             <Clock className="h-4 w-4" />
@@ -127,6 +129,13 @@ export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.El
                       onClick={() => setIsMenuOpen(false)}
                     />
                     <div className="absolute right-0 mt-2 w-48 bg-[hsl(220,40%,20%)] border border-white/10 rounded-lg shadow-lg z-20 py-1">
+                      <Link
+                        href="/pricing"
+                        className="block w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Pricing
+                      </Link>
                       <SignOutButton className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" />
                     </div>
                   </>
@@ -170,6 +179,13 @@ export function DashboardNav({ userName, userEmail }: DashboardNavProps): JSX.El
                   <div className="text-white/60 text-sm">{userEmail}</div>
                 </div>
               </div>
+              <Link
+                href="/pricing"
+                className="block w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
               <SignOutButton className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg" />
             </div>
           )}

@@ -10,10 +10,10 @@
  * @example
  * ```tsx
  * <DashboardHeader name="Sarah Johnson" email="sarah@example.com" />
- * // Displays: "Welcome to TowerOfBabel, Sarah Johnson"
+ * // Displays: "Welcome, Sarah Johnson"
  *
  * <DashboardHeader email="user@example.com" />
- * // Displays: "Welcome to TowerOfBabel, user@example.com"
+ * // Displays: "Welcome, user@example.com"
  * ```
  */
 
@@ -35,7 +35,7 @@ export function DashboardHeader({ name, email }: DashboardHeaderProps): JSX.Elem
   return (
     <div className="mb-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-white">
-        Welcome to TowerOfBabel, {displayName}
+        Welcome, {displayName}
       </h1>
     </div>
   );

@@ -1,18 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, CheckCircle } from 'lucide-react';
+import { ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FREE_TRIAL_CONFIG, PRO_CONFIG, type PricingFeature } from '@/lib/config/pricing';
 
 interface PricingSectionProps {
   className?: string;
+  /** Optional content to render between header and pricing cards (e.g., user stats) */
+  headerContent?: React.ReactNode;
 }
 
-interface PricingFeature {
-  text: string;
-}
-
-interface PricingCardProps {
+export interface PricingCardProps {
   title: string;
   subtitle: string;
   price: string;
@@ -28,8 +27,9 @@ interface PricingCardProps {
 
 /**
  * Individual pricing card component.
+ * Shared between landing page and pricing page.
  */
-function PricingCard({
+export function PricingCard({
   title,
   subtitle,
   price,
@@ -46,84 +46,61 @@ function PricingCard({
     <div className="relative flex-1">
       {/* Recommended badge */}
       {isRecommended && (
-        <div className="absolute -top-[15px] right-8 z-10">
-          <div className="bg-blue-500 rounded-full px-4 py-1.5">
-            <span className="text-base text-white">Recommended</span>
-          </div>
+        <div className="absolute -top-3 right-8 z-10">
+          <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+            Recommended
+          </span>
         </div>
       )}
 
       <div
         className={cn(
-          'h-full rounded-[20px] border border-violet-500 p-10 flex flex-col'
-        )}
-        style={
+          'h-full rounded-3xl p-8 flex flex-col',
           isHighlighted
-            ? {
-                background:
-                  'linear-gradient(134deg, rgba(121,61,237,1) 4%, rgba(121,61,237,0) 83%), rgba(255,255,255,0.04)',
-              }
-            : {
-                background: 'rgba(255,255,255,0.04)',
-              }
-        }
+            ? 'bg-gradient-to-br from-purple-800/30 via-purple-700/20 to-transparent backdrop-blur-sm border border-purple-500/30'
+            : 'bg-white/5 backdrop-blur-sm border border-white/10'
+        )}
       >
-        {/* Texture overlay */}
-        <div
-          className="absolute inset-0 rounded-[20px] opacity-10 pointer-events-none"
-          style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
-          }}
-        />
-
         {/* Header */}
-        <div className="mb-11">
-          <h3 className="text-[36px] font-bold text-white leading-[44px] mb-4">{title}</h3>
-          <p className="text-lg text-[#d2d3d6] leading-[30px]">{subtitle}</p>
-        </div>
+        <h3 className="text-3xl font-bold mb-3">{title}</h3>
+        <p className="text-white/70 mb-8">{subtitle}</p>
 
         {/* Price */}
-        <div className="mb-11">
-          <div className="flex items-center gap-3.5 mb-[30px]">
-            <span className="text-[64px] font-bold text-white leading-[64px]">{price}</span>
-            {priceSubtext && (
-              <span className="text-lg text-[#d2d3d6] leading-[30px]">{priceSubtext}</span>
-            )}
+        <div className="mb-8">
+          <div className="flex items-baseline gap-2 mb-3">
+            <p className="text-5xl font-bold">{price}</p>
+            {priceSubtext && <p className="text-white/70">{priceSubtext}</p>}
           </div>
           {yearlyPrice && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3.5">
-                <span className="text-[36px] font-bold text-white leading-[44px]">{yearlyPrice}</span>
-                <span className="text-2xl text-[#d2d3d6] leading-[32px]">per Year</span>
-              </div>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold text-white/90">{yearlyPrice}</p>
+              <p className="text-white/70">per Year</p>
               {yearlySavings && (
-                <div className="bg-[#12b757] rounded-full px-4 py-1.5">
-                  <span className="text-base font-medium text-white">{yearlySavings}</span>
-                </div>
+                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold ml-2">
+                  {yearlySavings}
+                </span>
               )}
             </div>
           )}
         </div>
 
         {/* Features */}
-        <div className="flex-1 mb-10">
-          <div className="flex flex-col gap-4">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-white flex-shrink-0" />
-                <span className="text-lg font-medium text-white leading-[30px]">{feature.text}</span>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4 mb-8 flex-grow">
+          {features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
+              <p>{feature.text}</p>
+            </div>
+          ))}
         </div>
 
         {/* CTA Button */}
         <Link
           href={ctaHref}
-          className="flex items-center justify-center gap-1 bg-violet-600 hover:bg-violet-700 transition-colors rounded-full px-9 py-4 h-14 w-full"
+          className="w-full bg-primary hover:bg-primary/90 rounded-full py-4 text-lg font-semibold flex items-center justify-center gap-2 transition-colors"
         >
-          <span className="text-base font-semibold text-white">{ctaText}</span>
-          <ChevronRight className="w-5 h-5 text-white" />
+          {ctaText}
+          <ChevronRight className="w-5 h-5" />
         </Link>
       </div>
     </div>
@@ -131,23 +108,9 @@ function PricingCard({
 }
 
 /**
- * Pricing section with Free Trial and Pay-As-You-Go plans.
+ * Pricing section with Free plan.
  */
-export function PricingSection({ className }: PricingSectionProps): JSX.Element {
-  const freeFeatures = [
-    { text: '10 cultural interpretations per month' },
-    { text: 'Basic tone & gesture explanations' },
-    { text: 'Email + chat scenario support' },
-    { text: 'Limited saved histories' },
-  ];
-
-  const paidFeatures = [
-    { text: 'Unlimited interpretations' },
-    { text: 'Basic tone & gesture explanations' },
-    { text: 'Email + chat scenario support' },
-    { text: 'Unlimited saved histories' },
-  ];
-
+export function PricingSection({ className, headerContent }: PricingSectionProps): JSX.Element {
   return (
     <section id="pricing" className={cn('py-20 px-4', className)}>
       <div className="max-w-[1170px] mx-auto">
@@ -161,29 +124,35 @@ export function PricingSection({ className }: PricingSectionProps): JSX.Element 
           </h2>
         </div>
 
+        {/* Optional content between header and cards (e.g., user stats) */}
+        {headerContent}
+
         {/* Pricing Cards */}
-        <div className="flex flex-col lg:flex-row gap-[30px]">
-          <PricingCard
-            title="Free Trial"
-            subtitle="Perfect for individuals exploring cultural insights."
-            price="Free"
-            features={freeFeatures}
-            ctaText="Try Free - No Credit Card"
-            ctaHref="/sign-in"
-            isHighlighted={true}
-          />
-          <PricingCard
-            title="Pay-As-You-Go"
-            subtitle="Perfect for individuals exploring cultural insights."
-            price="$10"
-            priceSubtext="per month"
-            yearlyPrice="$96"
-            yearlySavings="Save 20%"
-            features={paidFeatures}
-            ctaText="Start Premium"
-            ctaHref="/sign-in"
-            isRecommended={true}
-          />
+        <div className="flex justify-center gap-8">
+          <div className="max-w-[570px] w-full">
+            <PricingCard
+              title={FREE_TRIAL_CONFIG.title}
+              subtitle={FREE_TRIAL_CONFIG.subtitle}
+              price={FREE_TRIAL_CONFIG.price}
+              features={FREE_TRIAL_CONFIG.features}
+              ctaText={FREE_TRIAL_CONFIG.ctaText}
+              ctaHref={FREE_TRIAL_CONFIG.ctaHref}
+              isHighlighted={true}
+            />
+          </div>
+          <div className="max-w-[570px] w-full">
+            <PricingCard
+              title={PRO_CONFIG.title}
+              subtitle={PRO_CONFIG.subtitle}
+              price={PRO_CONFIG.price}
+              priceSubtext={PRO_CONFIG.priceSubtext}
+              features={PRO_CONFIG.features}
+              ctaText={PRO_CONFIG.ctaText}
+              ctaHref={PRO_CONFIG.ctaHref}
+              isHighlighted={false}
+              isRecommended={true}
+            />
+          </div>
         </div>
       </div>
     </section>

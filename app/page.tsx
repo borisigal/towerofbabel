@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, FileText, Globe, Sparkles, Check, Lock } from 'lucide-react';
+import { ChevronRight, FileText, Globe, Sparkles, Lock } from 'lucide-react';
+import { FreeTrial } from '@/components/landing/FreeTrial';
+import { Pro } from '@/components/landing/Pro';
 
 /**
  * Landing page for the TowerOfBabel application.
@@ -635,97 +637,12 @@ export default function Home(): JSX.Element {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {/* Free Trial Card */}
-          <div className="bg-gradient-to-br from-purple-800/30 via-purple-700/20 to-transparent backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30 flex flex-col">
-            <h3 className="text-3xl font-bold mb-3">Free Trial</h3>
-            <p className="text-white/70 mb-8">Perfect for individuals exploring cultural insights.</p>
-
-            <div className="mb-8">
-              <p className="text-5xl font-bold">Free</p>
-            </div>
-
-            <div className="space-y-4 mb-8 flex-grow">
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>10 cultural interpretations per month</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Basic tone & gesture explanations</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Email + chat scenario support</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Limited saved histories</p>
-              </div>
-            </div>
-
-            <Button
-              asChild
-              className="w-full bg-primary hover:bg-primary/90 rounded-full py-6 text-lg font-semibold"
-            >
-              <Link href="/sign-in">
-                Try Free - No Credit Card <ChevronRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
+        <div className="flex justify-center gap-8">
+          <div className="max-w-[570px] w-full">
+            <FreeTrial />
           </div>
-
-          {/* Pay-As-You-Go Card */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10 relative flex flex-col">
-            <div className="absolute -top-3 right-8">
-              <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                Recommended
-              </span>
-            </div>
-
-            <h3 className="text-3xl font-bold mb-3">Pay-As-You-Go</h3>
-            <p className="text-white/70 mb-8">Perfect for individuals exploring cultural insights.</p>
-
-            <div className="mb-8">
-              <div className="flex items-baseline gap-2 mb-3">
-                <p className="text-5xl font-bold">$10</p>
-                <p className="text-white/70">per month</p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-white/90">$96</p>
-                <p className="text-white/70">per Year</p>
-                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold ml-2">
-                  Save 20%
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-4 mb-8 flex-grow">
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Unlimited interpretations</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Basic tone & gesture explanations</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Email + chat scenario support</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-                <p>Unlimited saved histories</p>
-              </div>
-            </div>
-
-            <Button
-              asChild
-              className="w-full bg-primary hover:bg-primary/90 rounded-full py-6 text-lg font-semibold"
-            >
-              <Link href="/sign-in">
-                Start Premium <ChevronRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
+          <div className="max-w-[570px] w-full">
+            <Pro />
           </div>
         </div>
       </div>
