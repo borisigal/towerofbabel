@@ -2,138 +2,192 @@
 
 import React from 'react';
 import { Emotion } from '@/lib/types/models';
-import { Progress } from '@/components/ui/progress';
-import { getIntensityLabel } from '@/lib/utils/emotionIntensity';
+import { type CultureCode } from '@/lib/types/models';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+// Import flag SVGs
+import AmericanFlag from '@/assets/flags/american.svg';
+import BritishFlag from '@/assets/flags/british.svg';
+import GermanFlag from '@/assets/flags/german.svg';
+import FrenchFlag from '@/assets/flags/french.svg';
+import JapaneseFlag from '@/assets/flags/japanese.svg';
+import ChineseFlag from '@/assets/flags/chinese.svg';
+import IndianFlag from '@/assets/flags/indian.svg';
+import SpanishFlag from '@/assets/flags/spanish.svg';
+import ItalianFlag from '@/assets/flags/italian.svg';
+import DutchFlag from '@/assets/flags/dutch.svg';
+import KoreanFlag from '@/assets/flags/korean.svg';
+import BrazilianFlag from '@/assets/flags/brazilian.svg';
+import MexicanFlag from '@/assets/flags/mexican.svg';
+import AustralianFlag from '@/assets/flags/australian.svg';
+import CanadianFlag from '@/assets/flags/canadian.svg';
+import RussianFlag from '@/assets/flags/russian.svg';
+import UkrainianFlag from '@/assets/flags/ukrainian.svg';
 
 /**
- * Displays emotion intensity with contextual labels and visual progress bar.
- * Adapts display based on whether interpretation is same-culture or cross-culture.
- *
- * For same-culture interpretations:
- * - Shows single emotion score with intensity label
- * - Displays one progress bar
- *
- * For cross-culture interpretations:
- * - Shows dual scores (sender culture → receiver culture)
- * - Displays two progress bars for comparison
- *
- * WCAG 2.1 AA Compliant:
- * - Text labels always visible (not color-only)
- * - Numerical scores displayed
- * - Intensity labels provide context
- * - Progress bars include aria-labels
- *
- * @param emotion - Emotion data with sender/receiver scores and explanation
- * @param sameCulture - True if sender and receiver cultures are identical
- * @param index - Zero-based index for ranking display (0 = 1st, 1 = 2nd, etc.)
- *
- * @example
- * ```tsx
- * // Same culture
- * <EmotionGauge
- *   emotion={{ name: 'Gratitude', senderScore: 8, explanation: 'Strong gratitude' }}
- *   sameCulture={true}
- *   index={0}
- * />
- *
- * // Cross culture
- * <EmotionGauge
- *   emotion={{
- *     name: 'Directness',
- *     senderScore: 8,
- *     receiverScore: 3,
- *     explanation: 'Americans value direct communication more'
- *   }}
- *   sameCulture={false}
- *   index={0}
- * />
- * ```
+ * Map culture codes to their corresponding flag SVG components.
  */
+const CULTURE_FLAGS: Record<CultureCode, React.FC<React.SVGProps<SVGSVGElement>>> = {
+  american: AmericanFlag,
+  british: BritishFlag,
+  german: GermanFlag,
+  french: FrenchFlag,
+  japanese: JapaneseFlag,
+  chinese: ChineseFlag,
+  indian: IndianFlag,
+  spanish: SpanishFlag,
+  italian: ItalianFlag,
+  dutch: DutchFlag,
+  korean: KoreanFlag,
+  brazilian: BrazilianFlag,
+  mexican: MexicanFlag,
+  australian: AustralianFlag,
+  canadian: CanadianFlag,
+  russian: RussianFlag,
+  ukrainian: UkrainianFlag,
+};
+
+/**
+ * Flag icon component that renders the appropriate culture flag.
+ */
+function FlagIcon({ cultureCode }: { cultureCode?: CultureCode }): JSX.Element {
+  if (!cultureCode || !CULTURE_FLAGS[cultureCode]) {
+    // Fallback: colored square indicator
+    return (
+      <span className="inline-flex items-center justify-center w-6 h-4 rounded-sm bg-white/20" />
+    );
+  }
+
+  const FlagComponent = CULTURE_FLAGS[cultureCode];
+  return (
+    <span className="inline-flex items-center justify-center w-6 h-4 overflow-hidden rounded-sm">
+      <FlagComponent className="w-full h-full" aria-hidden="true" />
+    </span>
+  );
+}
+
+/**
+ * Custom progress bar component with configurable color.
+ */
+function ProgressBar({
+  value,
+  color = 'blue',
+  ariaLabel
+}: {
+  value: number;
+  color?: 'blue' | 'purple';
+  ariaLabel: string;
+}): JSX.Element {
+  const percentage = Math.min(Math.max(value * 10, 0), 100);
+  const colorClass = color === 'blue'
+    ? 'bg-blue-500'
+    : 'bg-purple-500';
+
+  return (
+    <div
+      className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden"
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={10}
+      aria-label={ariaLabel}
+    >
+      <div
+        className={`h-full ${colorClass} rounded-full transition-all duration-300`}
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
+  );
+}
+
 interface EmotionGaugeProps {
   emotion: Emotion;
   sameCulture: boolean;
   index: number;
+  senderCulture?: CultureCode;
+  receiverCulture?: CultureCode;
 }
 
 /**
- * EmotionGauge component renders emotion intensity with adaptive display.
+ * EmotionGauge component displays emotion intensity with visual progress bars.
+ *
+ * Features:
+ * - Dual progress bars for cross-culture comparison (blue for sender, purple for receiver)
+ * - Flag icons for each culture (when culture codes provided)
+ * - Tooltip with explanation on hover
+ * - Clean, minimal design matching the dashboard aesthetic
  */
 export function EmotionGauge({
   emotion,
   sameCulture,
-  index,
+  senderCulture,
+  receiverCulture,
 }: EmotionGaugeProps): JSX.Element {
-  const senderIntensityLabel = getIntensityLabel(emotion.senderScore);
-  const receiverIntensityLabel = emotion.receiverScore
-    ? getIntensityLabel(emotion.receiverScore)
-    : '';
+  const content = (
+    <div className="space-y-3">
+      {/* Emotion Name */}
+      <h4 className="font-semibold text-white text-base">
+        {emotion.name}
+      </h4>
 
-  return (
-    <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
-      {/* Emotion Name with Rank */}
-      <h3 className="font-semibold text-lg">
-        {index + 1}. {emotion.name}
-      </h3>
+      {/* Score Rows */}
+      <div className="space-y-2">
+        {/* Sender Culture Row */}
+        <div className="flex items-center gap-3">
+          <FlagIcon cultureCode={senderCulture} />
+          <ProgressBar
+            value={emotion.senderScore}
+            color="blue"
+            ariaLabel={`${emotion.name} sender score: ${emotion.senderScore} out of 10`}
+          />
+          <span className="text-white/70 text-sm min-w-[40px] text-right">
+            {emotion.senderScore}/10
+          </span>
+        </div>
 
-      {sameCulture ? (
-        /* Same-culture: Single score + progress bar */
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Intensity:</span>
-            <span className="font-semibold">
-              {emotion.senderScore}/10{' '}
-              <span className="text-muted-foreground">({senderIntensityLabel})</span>
+        {/* Receiver Culture Row (only for cross-culture) */}
+        {!sameCulture && emotion.receiverScore !== undefined && (
+          <div className="flex items-center gap-3">
+            <FlagIcon cultureCode={receiverCulture} />
+            <ProgressBar
+              value={emotion.receiverScore}
+              color="purple"
+              ariaLabel={`${emotion.name} receiver score: ${emotion.receiverScore} out of 10`}
+            />
+            <span className="text-white/70 text-sm min-w-[40px] text-right">
+              {emotion.receiverScore}/10
             </span>
           </div>
-          <Progress
-            value={emotion.senderScore * 10}
-            className="h-2"
-            aria-label={`${emotion.name} intensity: ${emotion.senderScore} out of 10`}
-          />
-        </div>
-      ) : (
-        /* Cross-culture: Dual scores + two progress bars */
-        <div className="space-y-3">
-          {/* Sender Culture Score */}
-          <div className="space-y-1">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">In sender&apos;s culture:</span>
-              <span className="font-semibold">
-                {emotion.senderScore}/10{' '}
-                <span className="text-muted-foreground">({senderIntensityLabel})</span>
-              </span>
-            </div>
-            <Progress
-              value={emotion.senderScore * 10}
-              className="h-2"
-              aria-label={`${emotion.name} in sender's culture: ${emotion.senderScore} out of 10`}
-            />
-          </div>
-
-          {/* Receiver Culture Score */}
-          <div className="space-y-1">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">In receiver&apos;s culture:</span>
-              <span className="font-semibold">
-                {emotion.receiverScore}/10{' '}
-                <span className="text-muted-foreground">({receiverIntensityLabel})</span>
-              </span>
-            </div>
-            <Progress
-              value={(emotion.receiverScore || 0) * 10}
-              className="h-2"
-              aria-label={`${emotion.name} in receiver's culture: ${emotion.receiverScore} out of 10`}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Explanation Text */}
-      {emotion.explanation && (
-        <p className="text-sm text-muted-foreground pt-2 border-t border-gray-200 dark:border-gray-700">
-          {emotion.explanation}
-        </p>
-      )}
+        )}
+      </div>
     </div>
   );
+
+  // If there's an explanation, wrap in tooltip
+  if (emotion.explanation) {
+    return (
+      <TooltipProvider>
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            <div className="cursor-help">
+              {content}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            className="max-w-xs bg-slate-800 text-white text-sm p-3 rounded-lg shadow-lg border border-white/10"
+          >
+            <p>{emotion.explanation}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return content;
 }

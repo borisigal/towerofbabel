@@ -683,6 +683,8 @@ export function InterpretationForm(): JSX.Element {
           originalMessage={originalMessage}
           messagesRemaining={messagesRemaining}
           interpretationId={interpretationId || undefined}
+          senderCulture={senderCulture as CultureCode}
+          receiverCulture={receiverCulture as CultureCode}
         />
       )}
 

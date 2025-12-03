@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { OutboundAnalysis } from './OutboundAnalysis';
 import { FeedbackButtons } from './FeedbackButtons';
 import { type OutboundInterpretationResponse } from '@/lib/llm/types';
-import { type Emotion } from '@/lib/types/models';
+import { type Emotion, type CultureCode } from '@/lib/types/models';
 
 interface OutboundResultProps {
   result: OutboundInterpretationResponse;
   originalMessage: string;
   messagesRemaining?: number;
   interpretationId?: string;
+  senderCulture?: CultureCode;
+  receiverCulture?: CultureCode;
 }
 
 /**
@@ -51,6 +53,8 @@ export function OutboundResult({
   originalMessage: _originalMessage,
   messagesRemaining,
   interpretationId,
+  senderCulture,
+  receiverCulture,
 }: OutboundResultProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
@@ -101,7 +105,7 @@ export function OutboundResult({
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="w-full mx-auto py-4">
       <div className="space-y-6">
         {/* Optimized Message Section */}
         <div
@@ -147,6 +151,8 @@ export function OutboundResult({
           suggestions={suggestions}
           emotions={emotions as Emotion[]}
           sameCulture={sameCulture}
+          senderCulture={senderCulture}
+          receiverCulture={receiverCulture}
         />
 
         {/* Feedback Buttons Section */}

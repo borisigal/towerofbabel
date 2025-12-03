@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmotionGauge } from './EmotionGauge';
 import { type PartialOutboundResult } from '@/lib/hooks/useProgressiveJsonParser';
 import { useTypingEffect } from '@/lib/hooks/useTypingEffect';
-import { type Emotion } from '@/lib/types/models';
+import { type Emotion, type CultureCode } from '@/lib/types/models';
 
 /** Typing speed: chars per tick */
 const TYPING_SPEED = 1;
@@ -18,6 +18,10 @@ interface OutboundStreamingSkeletonProps {
   partialResult: PartialOutboundResult;
   /** Whether actively receiving stream chunks */
   isStreaming: boolean;
+  /** Sender culture code for emotion gauge flags */
+  senderCulture?: CultureCode;
+  /** Receiver culture code for emotion gauge flags */
+  receiverCulture?: CultureCode;
 }
 
 /**
@@ -138,6 +142,8 @@ function EmotionGaugeSkeleton({ index }: { index: number }): JSX.Element {
 export function OutboundStreamingSkeleton({
   partialResult,
   isStreaming,
+  senderCulture,
+  receiverCulture,
 }: OutboundStreamingSkeletonProps): JSX.Element {
   const { originalAnalysis, suggestions, optimizedMessage, emotions } = partialResult;
 
@@ -151,7 +157,7 @@ export function OutboundStreamingSkeleton({
   const sameCulture = emotions && emotions.length > 0 && emotions[0]?.receiverScore === undefined;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="w-full mx-auto py-4">
       <div className="space-y-6" aria-busy={isStreaming} aria-live="polite">
         {/* Optimized Message Section */}
         <div
@@ -273,25 +279,27 @@ export function OutboundStreamingSkeleton({
             )}
           </section>
 
-          {/* Top 3 Emotions Section */}
+          {/* Emotion Gauge Section */}
           <section>
             <h3 className="text-lg sm:text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-              Top 3 Emotions Detected
+              Emotion Gauge
             </h3>
             {emotionsComplete ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(emotions as Emotion[]).slice(0, 3).map((emotion, index) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {(emotions as Emotion[]).slice(0, 4).map((emotion, index) => (
                   <EmotionGauge
                     key={index}
                     emotion={emotion}
                     sameCulture={sameCulture ?? true}
                     index={index}
+                    senderCulture={senderCulture}
+                    receiverCulture={receiverCulture}
                   />
                 ))}
               </div>
             ) : optimizedMessageComplete ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[0, 1, 2].map((index) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {[0, 1, 2, 3].map((index) => (
                   <EmotionGaugeSkeleton key={index} index={index} />
                 ))}
                 {isStreaming && (
@@ -302,8 +310,8 @@ export function OutboundStreamingSkeleton({
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[0, 1, 2].map((index) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {[0, 1, 2, 3].map((index) => (
                   <EmotionGaugeSkeleton key={index} index={index} />
                 ))}
               </div>
