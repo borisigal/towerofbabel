@@ -411,12 +411,9 @@ export default function Home(): JSX.Element {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link href="/sign-in" className="hidden md:inline text-sm hover:text-primary transition-colors">
-            Login / Sign Up
-          </Link>
           <Button asChild className="bg-primary hover:bg-primary/90 rounded-full px-6">
             <Link href="/sign-in">
-              Try for Free <ChevronRight className="w-4 h-4 ml-1" />
+              Login / Sign Up <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
           </Button>
         </div>
@@ -460,7 +457,7 @@ export default function Home(): JSX.Element {
             className="bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-semibold shadow-xl"
           >
             <Link href="/sign-in">
-              Try Free - No Credit Card <ChevronRight className="w-5 h-5 ml-2" />
+              Try for Free - No Credit Card <ChevronRight className="w-5 h-5 ml-2" />
             </Link>
           </Button>
 

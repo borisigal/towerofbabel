@@ -32,7 +32,7 @@ export const FREE_TRIAL_CONFIG: PricingPlanConfig = {
     { text: 'Cultural Context' },
     { text: 'Emotion Gauge' },
   ],
-  ctaText: 'Try Free - No Credit Card',
+  ctaText: 'Try for Free - No Credit Card',
   ctaHref: '/sign-in',
 };
 
