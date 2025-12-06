@@ -19,11 +19,34 @@ import { z } from 'zod';
 
 /**
  * Request body validation schema
+ *
+ * feedback_text is optional and limited to 500 characters.
+ * Character limit chosen for concise, actionable feedback without overwhelming PMs.
  */
 const FeedbackRequestSchema = z.object({
   interpretationId: z.string().uuid('Invalid interpretation ID format'),
   feedback: z.enum(['up', 'down']),
+  feedback_text: z
+    .string()
+    .max(500, 'Feedback text must be 500 characters or less')
+    .optional(),
 });
+
+/**
+ * Sanitizes user-provided feedback text to prevent XSS attacks.
+ * Strips HTML tags and trims whitespace.
+ *
+ * @param text - User-provided feedback text (optional)
+ * @returns Sanitized text or null if empty
+ */
+function sanitizeFeedbackText(text: string | undefined): string | null {
+  if (!text || text.trim() === '') return null;
+
+  // Strip HTML tags to prevent XSS
+  const sanitized = text.replace(/<[^>]*>/g, '').trim();
+
+  return sanitized.length > 0 ? sanitized : null;
+}
 
 /**
  * POST /api/feedback
@@ -84,7 +107,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { interpretationId, feedback } = validationResult.data;
+    const { interpretationId, feedback, feedback_text } = validationResult.data;
 
     // 3. AUTHORIZATION - Verify interpretation exists and belongs to user
     const interpretation = await prisma.interpretation.findUnique({
@@ -155,13 +178,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 5. UPDATE DATABASE - Store feedback and timestamp
+    // 5. UPDATE DATABASE - Store feedback, text (sanitized), and timestamp atomically
     const feedbackTimestamp = new Date();
+    const sanitizedText = sanitizeFeedbackText(feedback_text);
 
     await prisma.interpretation.update({
       where: { id: interpretationId },
       data: {
         feedback,
+        feedback_text: sanitizedText,
         feedback_timestamp: feedbackTimestamp,
       },
     });

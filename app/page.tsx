@@ -634,11 +634,11 @@ export default function Home(): JSX.Element {
           </h2>
         </div>
 
-        <div className="flex justify-center gap-8">
-          <div className="max-w-[570px] w-full">
+        <div className="flex flex-col md:flex-row justify-center gap-8 items-stretch">
+          <div className="w-full md:max-w-[570px]">
             <FreeTrial />
           </div>
-          <div className="max-w-[570px] w-full">
+          <div className="w-full md:max-w-[570px]">
             <Pro />
           </div>
         </div>
