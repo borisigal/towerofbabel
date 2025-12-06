@@ -65,7 +65,7 @@ describe('PricingSection', () => {
       const { container } = render(<PricingSection />);
 
       const cardsContainer = container.querySelector('.flex.flex-col.md\\:flex-row');
-      const cards = cardsContainer?.querySelectorAll('.max-w-\\[570px\\]');
+      const cards = cardsContainer?.querySelectorAll('.w-full.md\\:max-w-\\[570px\\]');
       expect(cards?.length).toBe(2);
     });
   });

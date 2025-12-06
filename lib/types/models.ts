@@ -137,3 +137,42 @@ export interface InterpretationResponse {
   };
   messages_remaining?: number;
 }
+
+/**
+ * Feedback request payload sent to /api/feedback endpoint.
+ *
+ * @property interpretationId - UUID of the interpretation being rated
+ * @property feedback - Binary rating: 'up' (helpful) or 'down' (not helpful)
+ * @property feedback_text - Optional user-provided text feedback (max 500 chars enforced at API layer)
+ *
+ * @example
+ * ```typescript
+ * // Thumbs up without text
+ * { interpretationId: '123', feedback: 'up' }
+ *
+ * // Thumbs down with text explanation
+ * { interpretationId: '123', feedback: 'down', feedback_text: 'Missing cultural context about hierarchy' }
+ * ```
+ */
+export interface FeedbackRequest {
+  interpretationId: string;
+  feedback: 'up' | 'down';
+  feedback_text?: string;
+}
+
+/**
+ * Feedback response from /api/feedback endpoint.
+ * Standardized success/error response structure.
+ */
+export interface FeedbackResponse {
+  success: boolean;
+  data?: {
+    interpretationId: string;
+    feedback: 'up' | 'down';
+    timestamp: string;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+}

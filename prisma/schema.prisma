@@ -66,6 +66,7 @@ model Interpretation {
   interpretation_type  String    // "inbound" | "outbound" | "both"
   feedback             String?   // "up" | "down" (optional user rating)
   feedback_timestamp   DateTime? // When feedback was submitted
+  feedback_text        String?   // Optional user feedback text (max 500 chars enforced at API layer)
   cost_usd             Decimal   @db.Decimal(10, 4)
   llm_provider         String   // "openai" | "anthropic" | "xai" | "google"
   response_time_ms     Int
