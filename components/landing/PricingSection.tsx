@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,7 +44,7 @@ export function PricingCard({
   isRecommended = false,
 }: PricingCardProps): JSX.Element {
   return (
-    <div className="relative flex-1">
+    <div className="relative w-full">
       {/* Recommended badge */}
       {isRecommended && (
         <div className="absolute -top-3 right-8 z-10">
@@ -55,26 +56,26 @@ export function PricingCard({
 
       <div
         className={cn(
-          'h-full rounded-3xl p-8 flex flex-col',
+          'h-full rounded-3xl p-6 md:p-8 flex flex-col',
           isHighlighted
             ? 'bg-gradient-to-br from-purple-800/30 via-purple-700/20 to-transparent backdrop-blur-sm border border-purple-500/30'
             : 'bg-white/5 backdrop-blur-sm border border-white/10'
         )}
       >
         {/* Header */}
-        <h3 className="text-3xl font-bold mb-3">{title}</h3>
-        <p className="text-white/70 mb-8">{subtitle}</p>
+        <h3 className="text-2xl md:text-3xl font-bold mb-3">{title}</h3>
+        <p className="text-white/70 mb-6 md:mb-8 text-sm md:text-base">{subtitle}</p>
 
         {/* Price */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <div className="flex items-baseline gap-2 mb-3">
-            <p className="text-5xl font-bold">{price}</p>
-            {priceSubtext && <p className="text-white/70">{priceSubtext}</p>}
+            <p className="text-4xl md:text-5xl font-bold">{price}</p>
+            {priceSubtext && <p className="text-white/70 text-sm md:text-base">{priceSubtext}</p>}
           </div>
           {yearlyPrice && (
-            <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-bold text-white/90">{yearlyPrice}</p>
-              <p className="text-white/70">per Year</p>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <p className="text-2xl md:text-3xl font-bold text-white/90">{yearlyPrice}</p>
+              <p className="text-white/70 text-sm md:text-base">per Year</p>
               {yearlySavings && (
                 <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold ml-2">
                   {yearlySavings}
@@ -85,11 +86,11 @@ export function PricingCard({
         </div>
 
         {/* Features */}
-        <div className="space-y-4 mb-8 flex-grow">
+        <div className="space-y-3 md:space-y-4 mb-6 md:mb-8 flex-grow">
           {features.map((feature, index) => (
             <div key={index} className="flex items-start gap-3">
               <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-white" />
-              <p>{feature.text}</p>
+              <p className="text-sm md:text-base">{feature.text}</p>
             </div>
           ))}
         </div>
@@ -97,7 +98,7 @@ export function PricingCard({
         {/* CTA Button */}
         <Link
           href={ctaHref}
-          className="w-full bg-primary hover:bg-primary/90 rounded-full py-4 text-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+          className="w-full bg-primary hover:bg-primary/90 rounded-full py-3 md:py-4 text-base md:text-lg font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {ctaText}
           <ChevronRight className="w-5 h-5" />
@@ -128,7 +129,7 @@ export function PricingSection({ className, headerContent }: PricingSectionProps
         {headerContent}
 
         {/* Pricing Cards */}
-        <div className="flex justify-center gap-8">
+        <div className="flex flex-col md:flex-row justify-center gap-8">
           <div className="max-w-[570px] w-full">
             <PricingCard
               title={FREE_TRIAL_CONFIG.title}
