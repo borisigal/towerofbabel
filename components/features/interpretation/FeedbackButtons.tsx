@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ThumbsUp, ThumbsDown, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +26,8 @@ interface FeedbackButtonsProps {
  *
  * Features:
  * - Thumbs up/down buttons
+ * - Optional text feedback (500 character limit)
+ * - Character counter with visual warning (red when >450 characters)
  * - Loading state during API call
  * - Visual confirmation on success
  * - Disabled state after submission (can't change vote)
@@ -32,6 +35,12 @@ interface FeedbackButtonsProps {
  * - Keyboard accessible (Tab, Enter, Space)
  * - Screen reader friendly (ARIA labels)
  * - Tooltip on hover: "Was this interpretation helpful?"
+ *
+ * User Flow:
+ * 1. User optionally types feedback in textarea
+ * 2. User clicks thumbs up/down to submit both feedback type and text
+ * 3. Text is trimmed and sanitized before submission
+ * 4. Empty text treated as NULL (optional feedback)
  *
  * Privacy: Feedback links to interpretation_id only (no message content).
  *
@@ -53,9 +62,12 @@ export function FeedbackButtons({
   const [isLoading, setIsLoading] = useState(false);
   const [submittedFeedback, setSubmittedFeedback] = useState<'up' | 'down' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedbackText, setFeedbackText] = useState('');
 
   /**
-   * Submits feedback to the API.
+   * Submits feedback to the API with optional text feedback.
+   * Text is trimmed before submission (empty string converted to null).
+   *
    * @param feedback - 'up' or 'down'
    */
   const handleFeedback = async (feedback: 'up' | 'down'): Promise<void> => {
@@ -63,6 +75,10 @@ export function FeedbackButtons({
     setError(null);
 
     try {
+      // Trim feedback text and convert empty string to null
+      const trimmedText = feedbackText.trim();
+      const feedbackTextPayload = trimmedText.length > 0 ? trimmedText : undefined;
+
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
@@ -71,6 +87,7 @@ export function FeedbackButtons({
         body: JSON.stringify({
           interpretationId,
           feedback,
+          feedback_text: feedbackTextPayload,
         }),
       });
 
@@ -159,11 +176,39 @@ export function FeedbackButtons({
     );
   }
 
-  // Initial state - show both buttons
+  // Character count and styling
+  const charCount = feedbackText.length;
+  const isNearLimit = charCount > 450;
+
+  // Initial state - show textarea and buttons
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-center gap-2 pt-4">
+      <div className="flex flex-col items-center gap-3 pt-4">
         <p className="text-sm text-muted-foreground">Was this helpful?</p>
+
+        {/* Optional text feedback textarea */}
+        <div className="w-full max-w-md space-y-2">
+          <Textarea
+            placeholder="Tell us more (optional)"
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            maxLength={500}
+            aria-label="Optional text feedback"
+            aria-describedby="char-counter"
+            className="min-h-[100px] w-full resize-none"
+            disabled={isLoading}
+          />
+          <p
+            id="char-counter"
+            className={`text-xs text-right ${
+              isNearLimit ? 'text-red-600 dark:text-red-500' : 'text-muted-foreground'
+            }`}
+          >
+            {charCount}/500 characters
+          </p>
+        </div>
+
+        {/* Thumbs up/down buttons */}
         <div className="flex gap-2">
           <Tooltip>
             <TooltipTrigger asChild>

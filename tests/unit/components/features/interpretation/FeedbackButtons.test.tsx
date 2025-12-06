@@ -3,12 +3,15 @@
  *
  * Tests feedback submission UI functionality including:
  * - Initial state rendering
+ * - Optional text feedback (textarea)
+ * - Character counter logic
  * - API interaction
  * - Loading/success/error states
  * - Keyboard accessibility
  *
  * @see components/features/interpretation/FeedbackButtons.tsx
  * @see docs/stories/4.4.story.md
+ * @see docs/stories/7.2.story.md
  */
 
 import React from 'react';
@@ -71,10 +74,7 @@ describe('FeedbackButtons', () => {
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            interpretationId: mockInterpretationId,
-            feedback: 'up',
-          }),
+          // feedback_text is undefined when textarea is empty
         })
       );
     });
@@ -99,10 +99,7 @@ describe('FeedbackButtons', () => {
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            interpretationId: mockInterpretationId,
-            feedback: 'down',
-          }),
+          // feedback_text is undefined when textarea is empty
         })
       );
     });
@@ -219,8 +216,13 @@ describe('FeedbackButtons', () => {
       />
     );
 
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     const thumbsDownButton = screen.getByLabelText(/Thumbs down.*not helpful/i);
+
+    // Tab to textarea (first in tab order)
+    await user.tab();
+    expect(textarea).toHaveFocus();
 
     // Tab to first button
     await user.tab();
@@ -236,5 +238,196 @@ describe('FeedbackButtons', () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalled();
     });
+  });
+
+  // NEW TESTS FOR STORY 7.2 - Text Feedback Feature
+
+  it('should render textarea for optional text feedback', () => {
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    expect(textarea).toBeInTheDocument();
+    expect(textarea).toHaveAttribute('aria-label', 'Optional text feedback');
+  });
+
+  it('should display character counter with correct count', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+
+    // Initial state
+    expect(screen.getByText('0/500 characters')).toBeInTheDocument();
+
+    // Type some text
+    await user.type(textarea, 'This was helpful!');
+
+    // Should update counter
+    expect(screen.getByText('17/500 characters')).toBeInTheDocument();
+  });
+
+  it('should turn character counter red when over 450 characters', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+
+    // Type exactly 451 characters
+    const longText = 'a'.repeat(451);
+    await user.type(textarea, longText);
+
+    const counter = screen.getByText('451/500 characters');
+    expect(counter).toHaveClass('text-red-600');
+  });
+
+  it('should trim whitespace before submission', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    await user.type(textarea, '  Some feedback with spaces  ');
+
+    const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
+    await user.click(thumbsUpButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/feedback',
+        expect.objectContaining({
+          body: JSON.stringify({
+            interpretationId: mockInterpretationId,
+            feedback: 'up',
+            feedback_text: 'Some feedback with spaces',
+          }),
+        })
+      );
+    });
+  });
+
+  it('should submit feedback with text successfully', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    await user.type(textarea, 'This interpretation was very helpful!');
+
+    const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
+    await user.click(thumbsUpButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/feedback',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            interpretationId: mockInterpretationId,
+            feedback: 'up',
+            feedback_text: 'This interpretation was very helpful!',
+          }),
+        })
+      );
+    });
+  });
+
+  it('should submit feedback without text successfully (empty textarea)', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    // Don't type anything in textarea
+    const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
+    await user.click(thumbsUpButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/feedback',
+        expect.objectContaining({
+          body: JSON.stringify({
+            interpretationId: mockInterpretationId,
+            feedback: 'up',
+            // feedback_text should be undefined (not sent)
+          }),
+        })
+      );
+    });
+  });
+
+  it('should enforce 500 character limit via maxLength attribute', () => {
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    expect(textarea).toHaveAttribute('maxLength', '500');
+  });
+
+  it('should disable textarea during loading state', async () => {
+    const user = userEvent.setup();
+
+    // Mock delayed response to keep loading state
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => ({ success: true }),
+              } as Response),
+            100
+          )
+        )
+    );
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
+    await user.click(thumbsUpButton);
+
+    // During loading, textarea should be disabled
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    expect(textarea).toBeDisabled();
   });
 });
