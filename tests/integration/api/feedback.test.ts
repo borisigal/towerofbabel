@@ -285,4 +285,32 @@ describe('/api/feedback - POST', () => {
     expect(data.success).toBe(false);
     expect(data.error.code).toBe('INVALID_INPUT');
   });
+
+  it('should accept null feedback with text (text-only feedback)', async () => {
+    const feedbackText = 'Just wanted to share my thoughts';
+
+    const request = new NextRequest('http://localhost/api/feedback', {
+      method: 'POST',
+      body: JSON.stringify({
+        interpretationId: mockInterpretationId,
+        feedback: null,
+        feedback_text: feedbackText,
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(prisma.interpretation.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: mockInterpretationId },
+        data: expect.objectContaining({
+          feedback: null,
+          feedback_text: feedbackText,
+        }),
+      })
+    );
+  });
 });

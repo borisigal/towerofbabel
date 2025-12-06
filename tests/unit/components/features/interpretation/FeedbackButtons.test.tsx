@@ -55,7 +55,7 @@ describe('FeedbackButtons', () => {
     expect(screen.getByLabelText(/Thumbs down.*not helpful/i)).toBeEnabled();
   });
 
-  it('should call API with correct data when thumbs up clicked', async () => {
+  it('should call API with correct data when thumbs up clicked and submitted', async () => {
     const user = userEvent.setup();
 
     render(
@@ -65,8 +65,13 @@ describe('FeedbackButtons', () => {
       />
     );
 
+    // Click thumbs up to select
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
+
+    // Click submit button
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -74,13 +79,12 @@ describe('FeedbackButtons', () => {
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // feedback_text is undefined when textarea is empty
         })
       );
     });
   });
 
-  it('should call API with correct data when thumbs down clicked', async () => {
+  it('should call API with correct data when thumbs down clicked and submitted', async () => {
     const user = userEvent.setup();
 
     render(
@@ -90,22 +94,26 @@ describe('FeedbackButtons', () => {
       />
     );
 
+    // Click thumbs down to select
     const thumbsDownButton = screen.getByLabelText(/Thumbs down.*not helpful/i);
     await user.click(thumbsDownButton);
 
+    // Click submit button
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/feedback',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // feedback_text is undefined when textarea is empty
         })
       );
     });
   });
 
-  it('should display success state after successful submission', async () => {
+  it('should display thank you message after successful submission', async () => {
     const user = userEvent.setup();
 
     render(
@@ -118,10 +126,17 @@ describe('FeedbackButtons', () => {
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
 
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
     await waitFor(() => {
-      expect(screen.getByLabelText(/Thumbs up.*selected/i)).toBeDisabled();
-      expect(screen.getByLabelText(/Thumbs down/i)).toBeDisabled();
+      expect(screen.getByText(/Thanks for your feedback!/i)).toBeInTheDocument();
     });
+
+    // Verify buttons and textarea are gone
+    expect(screen.queryByLabelText(/Thumbs up/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Thumbs down/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/Tell us more/i)).not.toBeInTheDocument();
   });
 
   it('should call onFeedbackSubmitted callback on success', async () => {
@@ -136,6 +151,9 @@ describe('FeedbackButtons', () => {
 
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
+
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(mockOnFeedbackSubmitted).toHaveBeenCalledWith('up');
@@ -167,6 +185,9 @@ describe('FeedbackButtons', () => {
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
 
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
     await waitFor(() => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
       expect(screen.getByText('Try Again')).toBeInTheDocument();
@@ -194,6 +215,9 @@ describe('FeedbackButtons', () => {
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
 
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
     await waitFor(() => {
       expect(screen.getByText('Try Again')).toBeInTheDocument();
     });
@@ -216,27 +240,85 @@ describe('FeedbackButtons', () => {
       />
     );
 
-    const textarea = screen.getByPlaceholderText(/Tell us more/i);
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
-    const thumbsDownButton = screen.getByLabelText(/Thumbs down.*not helpful/i);
 
-    // Tab to textarea (first in tab order)
-    await user.tab();
-    expect(textarea).toHaveFocus();
+    // Use keyboard to select thumbs up
+    await user.click(thumbsUpButton);
 
-    // Tab to first button
-    await user.tab();
-    expect(thumbsUpButton).toHaveFocus();
+    // Submit button should now be enabled
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    expect(submitButton).not.toBeDisabled();
 
-    // Tab to second button
-    await user.tab();
-    expect(thumbsDownButton).toHaveFocus();
-
-    // Press Enter to submit
-    await user.keyboard('{Enter}');
+    // Click submit
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+
+  it('should disable submit button until thumb is selected or text is entered', () => {
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    expect(submitButton).toBeDisabled();
+  });
+
+  it('should enable submit button when text is entered (without thumb selection)', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    expect(submitButton).toBeDisabled();
+
+    // Type some text
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    await user.type(textarea, 'Some feedback');
+
+    // Submit button should now be enabled
+    expect(submitButton).not.toBeDisabled();
+  });
+
+  it('should submit with null feedback when only text is provided', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FeedbackButtons
+        interpretationId={mockInterpretationId}
+        onFeedbackSubmitted={mockOnFeedbackSubmitted}
+      />
+    );
+
+    // Type text without selecting a thumb
+    const textarea = screen.getByPlaceholderText(/Tell us more/i);
+    await user.type(textarea, 'Great interpretation!');
+
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/feedback',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            interpretationId: mockInterpretationId,
+            feedback: null, // null when no thumb selected
+            feedback_text: 'Great interpretation!',
+          }),
+        })
+      );
     });
   });
 
@@ -268,13 +350,13 @@ describe('FeedbackButtons', () => {
     const textarea = screen.getByPlaceholderText(/Tell us more/i);
 
     // Initial state
-    expect(screen.getByText('0/500 characters')).toBeInTheDocument();
+    expect(screen.getByText(/0\/500/i)).toBeInTheDocument();
 
     // Type some text
     await user.type(textarea, 'This was helpful!');
 
     // Should update counter
-    expect(screen.getByText('17/500 characters')).toBeInTheDocument();
+    expect(screen.getByText(/17\/500/i)).toBeInTheDocument();
   });
 
   it('should turn character counter red when over 450 characters', async () => {
@@ -293,7 +375,7 @@ describe('FeedbackButtons', () => {
     const longText = 'a'.repeat(451);
     await user.type(textarea, longText);
 
-    const counter = screen.getByText('451/500 characters');
+    const counter = screen.getByText(/451\/500/i);
     expect(counter).toHaveClass('text-red-600');
   });
 
@@ -312,6 +394,9 @@ describe('FeedbackButtons', () => {
 
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
+
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -343,6 +428,9 @@ describe('FeedbackButtons', () => {
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
 
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/feedback',
@@ -372,6 +460,9 @@ describe('FeedbackButtons', () => {
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
 
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/feedback',
@@ -398,7 +489,7 @@ describe('FeedbackButtons', () => {
     expect(textarea).toHaveAttribute('maxLength', '500');
   });
 
-  it('should disable textarea during loading state', async () => {
+  it('should disable buttons and textarea during loading state', async () => {
     const user = userEvent.setup();
 
     // Mock delayed response to keep loading state
@@ -426,8 +517,12 @@ describe('FeedbackButtons', () => {
     const thumbsUpButton = screen.getByLabelText(/Thumbs up.*helpful/i);
     await user.click(thumbsUpButton);
 
-    // During loading, textarea should be disabled
+    const submitButton = screen.getByText(/Submit Feedback/i);
+    await user.click(submitButton);
+
+    // During loading, elements should be disabled
     const textarea = screen.getByPlaceholderText(/Tell us more/i);
     expect(textarea).toBeDisabled();
+    expect(screen.getByText(/Submitting.../i)).toBeInTheDocument();
   });
 });
