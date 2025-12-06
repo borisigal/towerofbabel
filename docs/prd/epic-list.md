@@ -26,4 +26,14 @@
 ## Epic 5: Privacy, Polish & Launch Readiness
 **Goal:** Implement privacy badge, GDPR compliance features (data deletion, privacy policy), accessibility improvements (WCAG 2.1 AA), cross-browser testing, and PWA capabilities to ensure production readiness and build user trust.
 
+## Epic 6: LLM Integration Performance Optimization
+**Goal:** Significantly improve the perceived and actual performance of the interpretation engine by implementing response streaming and prompt caching, reducing user wait time and improving overall experience without any trade-offs to reliability or data consistency.
+
+## Epic 7: User Feedback Text Collection (BROWNFIELD)
+**Goal:** Enable users to provide written feedback alongside thumbs up/down ratings to help improve the cultural interpretation tool through qualitative user insights, without disrupting the existing feedback flow.
+
+**Stories:**
+1. Story 7.1: Database Schema & Migration for Feedback Text
+2. Story 7.2: Feedback Component, API Enhancement, Testing & Documentation
+
 ---

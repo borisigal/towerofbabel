@@ -129,8 +129,8 @@ export function PricingSection({ className, headerContent }: PricingSectionProps
         {headerContent}
 
         {/* Pricing Cards */}
-        <div className="flex flex-col md:flex-row justify-center gap-8">
-          <div className="max-w-[570px] w-full">
+        <div className="flex flex-col md:flex-row justify-center gap-8 items-stretch">
+          <div className="w-full md:max-w-[570px]">
             <PricingCard
               title={FREE_TRIAL_CONFIG.title}
               subtitle={FREE_TRIAL_CONFIG.subtitle}
@@ -141,7 +141,7 @@ export function PricingSection({ className, headerContent }: PricingSectionProps
               isHighlighted={true}
             />
           </div>
-          <div className="max-w-[570px] w-full">
+          <div className="w-full md:max-w-[570px]">
             <PricingCard
               title={PRO_CONFIG.title}
               subtitle={PRO_CONFIG.subtitle}
