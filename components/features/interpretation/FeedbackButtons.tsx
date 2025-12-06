@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ThumbsUp, ThumbsDown, Check, Loader2 } from 'lucide-react';
+import React, { useState, memo } from 'react';
+import { ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -55,22 +55,23 @@ interface FeedbackButtonsProps {
  * />
  * ```
  */
-export function FeedbackButtons({
+const FeedbackButtonsComponent = function FeedbackButtons({
   interpretationId,
   onFeedbackSubmitted,
 }: FeedbackButtonsProps): JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
-  const [submittedFeedback, setSubmittedFeedback] = useState<'up' | 'down' | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
+  const [selectedFeedback, setSelectedFeedback] = useState<'up' | 'down' | null>(null);
 
   /**
    * Submits feedback to the API with optional text feedback.
    * Text is trimmed before submission (empty string converted to null).
    *
-   * @param feedback - 'up' or 'down'
+   * @param feedback - 'up', 'down', or null (text-only feedback)
    */
-  const handleFeedback = async (feedback: 'up' | 'down'): Promise<void> => {
+  const handleFeedback = async (feedback: 'up' | 'down' | null): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
@@ -97,8 +98,11 @@ export function FeedbackButtons({
         throw new Error(data.error?.message || 'Failed to submit feedback');
       }
 
-      setSubmittedFeedback(feedback);
-      onFeedbackSubmitted?.(feedback);
+      // Mark as successfully submitted
+      setIsSubmitted(true);
+      if (feedback) {
+        onFeedbackSubmitted?.(feedback);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMessage);
@@ -114,47 +118,11 @@ export function FeedbackButtons({
     setError(null);
   };
 
-  // If feedback already submitted, show success state
-  if (submittedFeedback) {
+  // If feedback already submitted, show thank you message
+  if (isSubmitted) {
     return (
-      <div className="flex items-center justify-center gap-2 pt-4">
-        <p className="text-sm text-muted-foreground">Was this helpful?</p>
-        <div className="flex gap-2">
-          <Button
-            variant={submittedFeedback === 'up' ? 'default' : 'outline'}
-            size="sm"
-            disabled
-            className={`min-h-[44px] min-w-[44px] ${
-              submittedFeedback === 'up'
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'opacity-50'
-            }`}
-            aria-label="Thumbs up - This interpretation was helpful (selected)"
-          >
-            {submittedFeedback === 'up' ? (
-              <Check className="h-5 w-5" />
-            ) : (
-              <ThumbsUp className="h-5 w-5" />
-            )}
-          </Button>
-          <Button
-            variant={submittedFeedback === 'down' ? 'default' : 'outline'}
-            size="sm"
-            disabled
-            className={`min-h-[44px] min-w-[44px] ${
-              submittedFeedback === 'down'
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'opacity-50'
-            }`}
-            aria-label="Thumbs down - This interpretation was not helpful (selected)"
-          >
-            {submittedFeedback === 'down' ? (
-              <Check className="h-5 w-5" />
-            ) : (
-              <ThumbsDown className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+      <div className="flex items-center justify-center pt-4">
+        <p className="text-lg font-medium text-white/90">Thanks for your feedback!</p>
       </div>
     );
   }
@@ -180,51 +148,29 @@ export function FeedbackButtons({
   const charCount = feedbackText.length;
   const isNearLimit = charCount > 450;
 
-  // Initial state - show textarea and buttons
+  // Initial state - show thumbs, textarea, and submit button
   return (
     <TooltipProvider>
-      <div className="flex flex-col items-center gap-3 pt-4">
+      <div className="flex flex-col items-center gap-4 pt-4 w-full">
         <p className="text-sm text-muted-foreground">Was this helpful?</p>
 
-        {/* Optional text feedback textarea */}
-        <div className="w-full max-w-md space-y-2">
-          <Textarea
-            placeholder="Tell us more (optional)"
-            value={feedbackText}
-            onChange={(e) => setFeedbackText(e.target.value)}
-            maxLength={500}
-            aria-label="Optional text feedback"
-            aria-describedby="char-counter"
-            className="min-h-[100px] w-full resize-none"
-            disabled={isLoading}
-          />
-          <p
-            id="char-counter"
-            className={`text-xs text-right ${
-              isNearLimit ? 'text-red-600 dark:text-red-500' : 'text-muted-foreground'
-            }`}
-          >
-            {charCount}/500 characters
-          </p>
-        </div>
-
         {/* Thumbs up/down buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
+                variant={selectedFeedback === 'up' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => handleFeedback('up')}
                 disabled={isLoading}
-                className="min-h-[44px] min-w-[44px] hover:bg-green-50 hover:border-green-300 dark:hover:bg-green-900/20"
+                className={`min-h-[44px] min-w-[44px] ${
+                  selectedFeedback === 'up'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'hover:bg-green-50 hover:border-green-300 dark:hover:bg-green-900/20'
+                }`}
                 aria-label="Thumbs up - This interpretation was helpful"
+                onClick={() => setSelectedFeedback('up')}
               >
-                {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <ThumbsUp className="h-5 w-5" />
-                )}
+                <ThumbsUp className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -235,18 +181,18 @@ export function FeedbackButtons({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
+                variant={selectedFeedback === 'down' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => handleFeedback('down')}
                 disabled={isLoading}
-                className="min-h-[44px] min-w-[44px] hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-900/20"
+                className={`min-h-[44px] min-w-[44px] ${
+                  selectedFeedback === 'down'
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-900/20'
+                }`}
                 aria-label="Thumbs down - This interpretation was not helpful"
+                onClick={() => setSelectedFeedback('down')}
               >
-                {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <ThumbsDown className="h-5 w-5" />
-                )}
+                <ThumbsDown className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -254,7 +200,52 @@ export function FeedbackButtons({
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {/* Optional text feedback textarea with character counter inside */}
+        <div className="w-full max-w-2xl relative">
+          <Textarea
+            placeholder="Tell us more (optional)"
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            maxLength={500}
+            aria-label="Optional text feedback"
+            aria-describedby="char-counter"
+            className="min-h-[150px] w-full resize-none bg-white dark:bg-white dark:text-gray-900 pb-8"
+            disabled={isLoading}
+          />
+          <p
+            id="char-counter"
+            className={`absolute bottom-2 right-3 text-xs ${
+              isNearLimit ? 'text-red-600' : 'text-gray-500'
+            }`}
+          >
+            {charCount}/500
+          </p>
+        </div>
+
+        {/* Submit button */}
+        <Button
+          onClick={() => {
+            // Submit with selected thumb (or null if only text provided)
+            handleFeedback(selectedFeedback);
+          }}
+          disabled={isLoading || (!selectedFeedback && feedbackText.trim().length === 0)}
+          className="min-h-[44px] px-8 bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Submitting...
+            </>
+          ) : (
+            'Submit Feedback'
+          )}
+        </Button>
       </div>
     </TooltipProvider>
   );
-}
+};
+
+// Memoize component to prevent unnecessary re-renders
+// Only re-render if interpretationId changes (which never happens after mount)
+export const FeedbackButtons = memo(FeedbackButtonsComponent);

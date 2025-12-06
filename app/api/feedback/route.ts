@@ -20,12 +20,13 @@ import { z } from 'zod';
 /**
  * Request body validation schema
  *
+ * feedback can be 'up', 'down', or null (text-only feedback).
  * feedback_text is optional and limited to 500 characters.
  * Character limit chosen for concise, actionable feedback without overwhelming PMs.
  */
 const FeedbackRequestSchema = z.object({
   interpretationId: z.string().uuid('Invalid interpretation ID format'),
-  feedback: z.enum(['up', 'down']),
+  feedback: z.enum(['up', 'down']).nullable(),
   feedback_text: z
     .string()
     .max(500, 'Feedback text must be 500 characters or less')
