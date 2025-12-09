@@ -169,14 +169,22 @@ export function EmotionGauge({
   );
 
   // If there's an explanation, wrap in tooltip
+  // Use state to control tooltip open/close for mobile tap support
+  const [open, setOpen] = React.useState(false);
+
   if (emotion.explanation) {
     return (
       <TooltipProvider>
-        <Tooltip delayDuration={300}>
+        <Tooltip open={open} onOpenChange={setOpen} delayDuration={300}>
           <TooltipTrigger asChild>
-            <div className="cursor-help">
+            <button
+              type="button"
+              onClick={() => setOpen(!open)}
+              className="cursor-help text-left w-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-2 -m-2 transition-colors hover:bg-white/5 active:bg-white/10"
+              aria-label={`${emotion.name} - Tap for explanation`}
+            >
               {content}
-            </div>
+            </button>
           </TooltipTrigger>
           <TooltipContent
             side="top"
